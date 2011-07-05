@@ -18,11 +18,11 @@ package org.commonjava.web.user.data;
 
 import java.security.SecureRandom;
 
-import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Singleton;
 
 import org.apache.shiro.crypto.hash.Sha512Hash;
 
-@ApplicationScoped
+@Singleton
 public class PasswordManager
 {
 

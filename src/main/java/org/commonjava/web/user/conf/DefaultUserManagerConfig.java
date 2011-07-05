@@ -1,11 +1,16 @@
 package org.commonjava.web.user.conf;
 
+import javax.enterprise.inject.Alternative;
+import javax.inject.Named;
+
 import org.commonjava.web.config.annotation.ConfigName;
 import org.commonjava.web.config.annotation.SectionName;
 import org.commonjava.web.user.data.PasswordManager;
 import org.commonjava.web.user.model.User;
 
 @SectionName( "user-manager" )
+@Named( "standalone" )
+@Alternative
 public class DefaultUserManagerConfig
     implements UserManagerConfiguration
 {

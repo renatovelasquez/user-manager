@@ -116,13 +116,12 @@
         <version>0.1-SNAPSHOT</version>
     </dependency>
     
-    <dependency>
-    	<groupId>org.commonjava.enterprise</groupId>
-    	<artifactId>post-office</artifactId>
-    	<version>0.1-SNAPSHOT</version>
-    	<type>jar</type>
-    	<scope>compile</scope>
-    </dependency>
+    <!-- <dependency>
+      <groupId>org.commonjava.enterprise</groupId>
+      <artifactId>post-office</artifactId>
+      <version>0.1-SNAPSHOT</version>
+    </dependency> -->
+    
   </dependencies>
   
   <build>

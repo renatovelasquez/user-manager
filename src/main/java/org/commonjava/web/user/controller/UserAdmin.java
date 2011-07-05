@@ -22,7 +22,6 @@ import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import org.commonjava.enterprise.po.MailException;
 import org.commonjava.util.logging.Logger;
 import org.commonjava.web.user.data.UserDataException;
 import org.commonjava.web.user.data.UserDataManager;
@@ -47,7 +46,7 @@ public class UserAdmin
     }
 
     public void createUser()
-        throws MailException, UserDataException
+        throws UserDataException
     {
         logger.info( "\n\nSaving user: %s\n\n", newUser );
 

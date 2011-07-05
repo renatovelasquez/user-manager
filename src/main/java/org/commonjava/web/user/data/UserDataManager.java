@@ -24,13 +24,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.enterprise.context.RequestScoped;
 import javax.enterprise.event.Event;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Qualifier;
+import javax.inject.Singleton;
+import javax.persistence.EntityExistsException;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -42,14 +44,12 @@ import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
-import org.commonjava.enterprise.po.MailException;
-import org.commonjava.enterprise.po.MailMessage;
 import org.commonjava.util.logging.Logger;
 import org.commonjava.web.user.model.Permission;
 import org.commonjava.web.user.model.Role;
 import org.commonjava.web.user.model.User;
 
-@RequestScoped
+@Singleton
 public class UserDataManager
 {
     public static final String CREATE = "create";
@@ -85,13 +85,13 @@ public class UserDataManager
     private PasswordManager passwordManager;
 
     public void createUser( final User user, final boolean autoCommit )
-        throws MailException, UserDataException
+        throws UserDataException
     {
         final String password = passwordManager.generatePassword();
 
-        final MailMessage message = new MailMessage( UserMailTemplates.NEW_USER.template(), user.getEmail() );
-        message.property( "user", user );
-        message.property( "password", password );
+        // final MailMessage message = new MailMessage( UserMailTemplates.NEW_USER.template(), user.getEmail() );
+        // message.property( "user", user );
+        // message.property( "password", password );
 
         // mailManager.sendMessage( message );
 
@@ -146,7 +146,7 @@ public class UserDataManager
                  .getResultList();
     }
 
-    public void saveUser( final User user, final boolean autoCommit )
+    public boolean saveUser( final User user, final boolean autoCommit )
         throws UserDataException
     {
         try
@@ -157,13 +157,33 @@ public class UserDataManager
             }
 
             em.joinTransaction();
-            em.persist( user );
+
+            boolean success = true;
+            try
+            {
+                em.persist( user );
+            }
+            catch ( final EntityExistsException e )
+            {
+                success = false;
+                logger.error( "\n\n\nUser exists: %s\n\n\n", e, user.getUsername() );
+            }
 
             if ( autoCommit )
             {
-                tx.commit();
+                if ( success )
+                {
+                    tx.commit();
+                }
+                else
+                {
+                    tx.rollback();
+                }
             }
+
             userEventSrc.fire( user );
+
+            return success;
         }
         catch ( final NotSupportedException e )
         {
@@ -187,7 +207,7 @@ public class UserDataManager
         }
     }
 
-    public void saveRole( final Role role, final boolean autoCommit )
+    public boolean saveRole( final Role role, final boolean autoCommit )
         throws UserDataException
     {
         try
@@ -198,14 +218,33 @@ public class UserDataManager
             }
 
             em.joinTransaction();
-            em.persist( role );
+
+            boolean success = true;
+            try
+            {
+                em.persist( role );
+            }
+            catch ( final EntityExistsException e )
+            {
+                success = false;
+                logger.error( "\n\n\nRole exists: %s\n\n\n", e, role.getName() );
+            }
 
             if ( autoCommit )
             {
-                tx.commit();
+                if ( success )
+                {
+                    tx.commit();
+                }
+                else
+                {
+                    tx.rollback();
+                }
             }
 
             roleEventSrc.fire( role );
+
+            return success;
         }
         catch ( final NotSupportedException e )
         {
@@ -229,7 +268,7 @@ public class UserDataManager
         }
     }
 
-    public void savePermission( final Permission perm, final boolean autoCommit )
+    public boolean savePermission( final Permission perm, final boolean autoCommit )
         throws UserDataException
     {
         try
@@ -240,14 +279,33 @@ public class UserDataManager
             }
 
             em.joinTransaction();
-            em.persist( perm );
+
+            boolean success = true;
+            try
+            {
+                em.persist( perm );
+            }
+            catch ( final EntityExistsException e )
+            {
+                success = false;
+                logger.error( "\n\n\nPermission exists: %s\n\n\n", e, perm.getName() );
+            }
 
             if ( autoCommit )
             {
-                tx.commit();
+                if ( success )
+                {
+                    tx.commit();
+                }
+                else
+                {
+                    tx.rollback();
+                }
             }
 
             permissionEventSrc.fire( perm );
+
+            return success;
         }
         catch ( final NotSupportedException e )
         {
@@ -280,8 +338,19 @@ public class UserDataManager
         query.select( root )
              .where( cb.equal( root.get( "username" ), username ) );
 
-        return em.createQuery( query )
-                 .getSingleResult();
+        User user = null;
+        try
+        {
+            // TODO: cleaner way to check for user existence...
+            user = em.createQuery( query )
+                     .getSingleResult();
+        }
+        catch ( final NoResultException e )
+        {
+            logger.debug( "Cannot find user: %s. Error: %s", e, username, e.getMessage() );
+        }
+
+        return user;
     }
 
     public Permission getPermission( final String permissionName )
@@ -293,8 +362,19 @@ public class UserDataManager
         query.select( root )
              .where( cb.equal( root.get( "name" ), permissionName ) );
 
-        return em.createQuery( query )
-                 .getSingleResult();
+        Permission perm = null;
+        try
+        {
+            // TODO: cleaner way to check for user existence...
+            perm = em.createQuery( query )
+                     .getSingleResult();
+        }
+        catch ( final NoResultException e )
+        {
+            logger.debug( "Cannot find permission: %s. Error: %s", e, permissionName, e.getMessage() );
+        }
+
+        return perm;
     }
 
     public Role getRole( final String roleName )
@@ -306,8 +386,20 @@ public class UserDataManager
         query.select( root )
              .where( cb.equal( root.get( "name" ), roleName ) );
 
-        return em.createQuery( query )
-                 .getSingleResult();
+        Role role = null;
+
+        try
+        {
+            // TODO: cleaner way to check for user existence...
+            role = em.createQuery( query )
+                     .getSingleResult();
+        }
+        catch ( final NoResultException e )
+        {
+            logger.debug( "Cannot find role: %s. Error: %s", e, roleName, e.getMessage() );
+        }
+
+        return role;
     }
 
     // public void onUserChanged( @Observes( notifyObserver = Reception.IF_EXISTS ) final User user )
