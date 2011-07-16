@@ -19,6 +19,8 @@ public class Role
 
     public static final String ADMIN = "admin";
 
+    public static final String NAMESPACE = "roles";
+
     @Id
     @GeneratedValue
     private int id;

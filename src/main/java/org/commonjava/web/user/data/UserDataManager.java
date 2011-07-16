@@ -16,6 +16,11 @@
  ******************************************************************************/
 package org.commonjava.web.user.data;
 
+import static org.commonjava.web.user.model.Permission.CREATE;
+import static org.commonjava.web.user.model.Permission.DELETE;
+import static org.commonjava.web.user.model.Permission.READ;
+import static org.commonjava.web.user.model.Permission.UPDATE;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -52,14 +57,6 @@ import org.commonjava.web.user.model.User;
 @Singleton
 public class UserDataManager
 {
-    public static final String CREATE = "create";
-
-    public static final String READ = "read";
-
-    public static final String UPDATE = "update";
-
-    public static final String DELETE = "delete";
-
     private final Logger logger = new Logger( getClass() );
 
     @Inject

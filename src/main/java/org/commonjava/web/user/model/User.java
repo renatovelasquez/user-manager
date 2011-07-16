@@ -43,6 +43,8 @@ public class User
 
     public static final String ADMIN = "admin";
 
+    public static final String NAMESPACE = "users";
+
     @Id
     @GeneratedValue
     private int id;

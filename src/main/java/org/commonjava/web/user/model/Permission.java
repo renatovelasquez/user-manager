@@ -19,6 +19,18 @@ public class Permission
 
     public static final String WILDCARD = "*";
 
+    public static final String CREATE = "create";
+
+    public static final String READ = "read";
+
+    public static final String UPDATE = "update";
+
+    public static final String DELETE = "delete";
+
+    public static final String ADMIN = "admin";
+
+    public static final String NAMESPACE = "permissions";
+
     @Id
     @GeneratedValue
     private int id;
@@ -36,7 +48,7 @@ public class Permission
 
     public Permission( final String... nameParts )
     {
-        this.name = join( nameParts, ":" );
+        this.name = name( nameParts );
     }
 
     public int getId()
@@ -111,6 +123,11 @@ public class Permission
     public String toString()
     {
         return String.format( "Permission@%d [%s]", id, name );
+    }
+
+    public static String name( final String... parts )
+    {
+        return join( parts, ":" );
     }
 
 }
