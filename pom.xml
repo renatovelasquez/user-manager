@@ -14,90 +14,31 @@
   
   You should have received a copy of the GNU Affero General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
--->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+--><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   
   <parent>
     <groupId>org.commonjava.web</groupId>
-    <artifactId>jsf-app-support</artifactId>
+    <artifactId>jsf-app-parent</artifactId>
     <version>1-SNAPSHOT</version>
   </parent>
   
   <artifactId>user-manager</artifactId>
   <version>0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
   
-  <name>User Manager</name>
+  <name>User Manager (Parent)</name>
   
   <dependencies>
     <dependency>
-        <groupId>org.apache.velocity</groupId>
-        <artifactId>velocity</artifactId>
-        <version>1.7</version>
-    </dependency>
-    
-    <!-- <dependency>
-        <groupId>javax.transaction</groupId>
-        <artifactId>jta</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>javax.mail</groupId>
-        <artifactId>mail</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>javax.activation</groupId>
-        <artifactId>activation</artifactId>
-    </dependency> -->
-    <dependency>
-        <groupId>org.commonjava.web</groupId>
-        <artifactId>configuration-api</artifactId>
-        <version>0.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-        <groupId>org.commonjava.web</groupId>
-        <artifactId>configuration-dotconf</artifactId>
-        <version>0.1-SNAPSHOT</version>
-    </dependency>
-    
-    <!-- <dependency>
-      <groupId>org.commonjava.enterprise</groupId>
-      <artifactId>post-office</artifactId>
-      <version>0.1-SNAPSHOT</version>
-    </dependency> -->
-    
-    <dependency>
-    	<groupId>org.commonjava.web</groupId>
-    	<artifactId>web-common</artifactId>
-    	<version>0.1-SNAPSHOT</version>
+      <groupId>org.commonjava.web</groupId>
+      <artifactId>configuration-api</artifactId>
     </dependency>
   </dependencies>
   
-  <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <artifactId>maven-war-plugin</artifactId>
-          <configuration>
-            <webResources>
-              <webResource>
-                <directory>src/main/webapp</directory>
-                <excludes>
-                  <exclude>**/*.properties</exclude>
-                  <exclude>**/web.xml</exclude>
-                </excludes>
-              </webResource>
-              <webResource>
-                <directory>src/main/webapp</directory>
-                <includes>
-                  <include>**/*.properties</include>
-                  <include>**/web.xml</include>
-                </includes>
-                <filtering>true</filtering>
-              </webResource>
-            </webResources>
-          </configuration>
-        </plugin>
-       </plugins>
-    </pluginManagement>
-  </build>
+  <modules>
+    <module>user-manager-core</module>
+    <module>user-manager-db-storage</module>
+    <module>user-manager-ldap-storage</module>
+  </modules>
 </project>
