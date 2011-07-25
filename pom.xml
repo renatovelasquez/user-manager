@@ -25,7 +25,6 @@
   
   <artifactId>user-manager</artifactId>
   <version>0.1-SNAPSHOT</version>
-  <packaging>pom</packaging>
   
   <name>User Manager (Parent)</name>
   
@@ -34,11 +33,28 @@
       <groupId>org.commonjava.web</groupId>
       <artifactId>configuration-api</artifactId>
     </dependency>
+
+    <!-- <dependency>
+        <groupId>javax.transaction</groupId>
+        <artifactId>jta</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>javax.mail</groupId>
+        <artifactId>mail</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>javax.activation</groupId>
+        <artifactId>activation</artifactId>
+    </dependency> -->
+    
+    <!-- <dependency>
+      <groupId>org.commonjava.enterprise</groupId>
+      <artifactId>post-office</artifactId>
+    </dependency> -->
+    
+    <dependency>
+    	<groupId>org.commonjava.web</groupId>
+    	<artifactId>web-common</artifactId>
+    </dependency>
   </dependencies>
-  
-  <modules>
-    <module>user-manager-core</module>
-    <module>user-manager-db-storage</module>
-    <module>user-manager-ldap-storage</module>
-  </modules>
 </project>
