@@ -80,23 +80,6 @@ public class UserDataManager
         return backend.savePermission( perm, autoCommit );
     }
 
-    public Permission updatePermission( final Permission perm, final boolean autoCommit )
-        throws UserDataException
-    {
-        if ( !backend.hasPermission( perm.getName() ) )
-        {
-            throw new UserDataException( "Permission doesn't exist: %s", perm.getName() );
-        }
-
-        Permission existing = backend.getPermission( perm.getName() );
-        if ( perm != existing )
-        {
-            existing = existing.updateFrom( perm );
-        }
-
-        return backend.savePermission( existing, autoCommit );
-    }
-
     public Role createRole( final String name, final boolean autoCommit )
         throws UserDataException
     {

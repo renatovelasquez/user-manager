@@ -2,17 +2,16 @@ package org.commonjava.web.user.model;
 
 import static org.apache.commons.lang.StringUtils.join;
 
-import java.util.Set;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.ManyToMany;
+import javax.persistence.Table;
 
 import org.hibernate.validator.constraints.NotBlank;
 
 @Entity
+@Table( name = "perms" )
 public class Permission
     implements org.apache.shiro.authz.Permission
 
@@ -39,9 +38,6 @@ public class Permission
     @NotBlank
     @Column( unique = true )
     private String name;
-
-    @ManyToMany
-    private Set<Permission> impliedPermissions;
 
     public Permission()
     {
@@ -70,16 +66,6 @@ public class Permission
     public void setName( final String name )
     {
         this.name = name;
-    }
-
-    public Set<Permission> getImpliedPermissions()
-    {
-        return impliedPermissions;
-    }
-
-    public void setImpliedPermissions( final Set<Permission> impliedPermissions )
-    {
-        this.impliedPermissions = impliedPermissions;
     }
 
     @Override
@@ -117,7 +103,16 @@ public class Permission
     @Override
     public boolean implies( final org.apache.shiro.authz.Permission p )
     {
-        return impliedPermissions.contains( p );
+        if ( name.endsWith( WILDCARD ) && ( p instanceof Permission ) )
+        {
+            Permission perm = (Permission) p;
+            String prefix = name.substring( 0, name.length() - WILDCARD.length() );
+
+            String permName = perm.getName();
+            return permName.length() > prefix.length() && permName.startsWith( prefix );
+        }
+
+        return false;
     }
 
     @Override
@@ -129,12 +124,6 @@ public class Permission
     public static String name( final String... parts )
     {
         return join( parts, ":" );
-    }
-
-    public Permission updateFrom( final Permission perm )
-    {
-        impliedPermissions = perm.getImpliedPermissions();
-        return this;
     }
 
 }

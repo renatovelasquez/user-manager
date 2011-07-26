@@ -25,6 +25,7 @@
   
   <artifactId>user-manager</artifactId>
   <version>0.1-SNAPSHOT</version>
+  <packaging>war</packaging>
   
   <name>User Manager (Parent)</name>
   
@@ -32,6 +33,10 @@
     <dependency>
       <groupId>org.commonjava.web</groupId>
       <artifactId>configuration-api</artifactId>
+    </dependency>
+    <dependency>
+    	<groupId>org.commonjava.web</groupId>
+    	<artifactId>configuration-dotconf</artifactId>
     </dependency>
 
     <!-- <dependency>

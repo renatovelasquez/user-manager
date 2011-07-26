@@ -10,10 +10,12 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
+import javax.persistence.Table;
 
 import org.hibernate.validator.constraints.NotBlank;
 
 @Entity
+@Table( name = "roles" )
 public class Role
 {
 
