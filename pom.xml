@@ -19,7 +19,7 @@
   
   <parent>
     <groupId>org.commonjava.web</groupId>
-    <artifactId>jsf-app-parent</artifactId>
+    <artifactId>rest-app-parent</artifactId>
     <version>1-SNAPSHOT</version>
   </parent>
   
