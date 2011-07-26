@@ -21,10 +21,10 @@ import javax.servlet.annotation.WebInitParam;
 
 import org.apache.shiro.web.servlet.IniShiroFilter;
 
-@WebFilter( filterName = "shiro",
-            urlPatterns = "/*",
-            initParams = @WebInitParam( name = "configPath",
-                                        value = "/etc/user-manager/security.conf" ) )
+// @WebFilter( filterName = "shiro",
+//             urlPatterns = "/*",
+//             initParams = @WebInitParam( name = "configPath",
+//                                         value = "/etc/user-manager/security.conf" ) )
 public class ShiroFilter
     extends IniShiroFilter
 {

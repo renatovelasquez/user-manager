@@ -23,7 +23,7 @@ import org.commonjava.web.user.model.Permission;
 
 @Path( "/permissions" )
 @RequestScoped
-@RequiresAuthentication
+// @RequiresAuthentication
 public class PermissionResource
 {
 

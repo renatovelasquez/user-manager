@@ -31,7 +31,7 @@ import org.commonjava.web.user.model.Role;
 
 @Path( "/roles" )
 @RequestScoped
-@RequiresAuthentication
+// @RequiresAuthentication
 public class RoleResource
 {
 

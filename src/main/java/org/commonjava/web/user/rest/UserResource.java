@@ -31,7 +31,7 @@ import org.commonjava.web.user.model.User;
 
 @Path( "/users" )
 @RequestScoped
-@RequiresAuthentication
+// @RequiresAuthentication
 public class UserResource
 {
 
