@@ -76,8 +76,8 @@ public class User
     {
     }
 
-    public User( final String username, final String email, final String firstName, final String lastName,
-                 final String passwordDigest )
+    public User( final String username, final String email, final String firstName,
+                 final String lastName, final String passwordDigest )
     {
         this.username = username;
         this.email = email;
@@ -203,9 +203,10 @@ public class User
         return true;
     }
 
-    public AuthenticationInfo getAuthenticationInfo()
+    public static AuthenticationInfo getAuthenticationInfo( final User user )
     {
-        return new SimpleAuthenticationInfo( username, passwordDigest, realm );
+        return new SimpleAuthenticationInfo( user.getUsername(), user.getPasswordDigest(),
+                                             user.realm );
     }
 
     public User updateFrom( final User user )

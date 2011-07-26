@@ -14,7 +14,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriInfo;
 
-import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.commonjava.util.logging.Logger;
 import org.commonjava.web.common.model.Listing;
 import org.commonjava.web.user.data.UserDataException;
@@ -37,7 +36,7 @@ public class PermissionResource
 
     @GET
     @Path( "list" )
-    @Produces( { MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_XML } )
+    @Produces( { MediaType.APPLICATION_JSON } )
     public Listing<Permission> listPermissions()
     {
         // FIXME: Un-comment this!!
@@ -49,7 +48,7 @@ public class PermissionResource
 
     @GET
     @Path( "{name}" )
-    @Produces( { MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_XML } )
+    @Produces( { MediaType.APPLICATION_JSON } )
     public Permission getPermission( @PathParam( "name" )
     final String name )
     {

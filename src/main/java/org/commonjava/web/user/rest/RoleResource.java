@@ -20,7 +20,6 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 import javax.xml.bind.JAXBElement;
 
-import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.commonjava.util.logging.Logger;
 import org.commonjava.web.common.model.Listing;
 import org.commonjava.web.common.model.MappingArray;
@@ -45,7 +44,7 @@ public class RoleResource
 
     @GET
     @Path( "list" )
-    @Produces( { MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_XML } )
+    @Produces( { MediaType.APPLICATION_JSON } )
     public Listing<Role> listRoles()
     {
         // FIXME: Un-comment this!!
@@ -57,7 +56,8 @@ public class RoleResource
 
     @POST
     @Path( "{name}/permissions" )
-    public Response updatePermissions( @PathParam( "name" ) final String name, final JAXBElement<MappingArray> element )
+    public Response updatePermissions( @PathParam( "name" )
+    final String name, final JAXBElement<MappingArray> element )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()
@@ -70,9 +70,7 @@ public class RoleResource
         final Role role = dataManager.getRole( name );
         if ( role == null )
         {
-            return Response.status( Status.BAD_REQUEST )
-                           .header( "Reason", "Invalid role: " + name )
-                           .build();
+            return Response.status( Status.BAD_REQUEST ).header( "Reason", "Invalid role: " + name ).build();
         }
 
         final Set<Permission> rolePermissions = new HashSet<Permission>();
@@ -81,9 +79,9 @@ public class RoleResource
             final Permission perm = dataManager.getPermission( permName );
             if ( perm == null )
             {
-                return Response.status( Status.BAD_REQUEST )
-                               .header( "Reason", "Invalid permission: " + permName )
-                               .build();
+                return Response.status( Status.BAD_REQUEST ).header( "Reason",
+                                                                     "Invalid permission: "
+                                                                         + permName ).build();
             }
 
             rolePermissions.add( perm );
@@ -94,14 +92,13 @@ public class RoleResource
         try
         {
             dataManager.updateRole( role, true );
-            builder = Response.ok()
-                              .contentLocation( uriInfo.getAbsolutePathBuilder()
-                                                       .build( name ) );
+            builder =
+                Response.ok().contentLocation( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
         catch ( final UserDataException e )
         {
-            logger.error( "Failed to update role: %s with permissions: %s. Reason: %s", e, name, permissionNames,
-                          e.getMessage() );
+            logger.error( "Failed to update role: %s with permissions: %s. Reason: %s", e, name,
+                          permissionNames, e.getMessage() );
             builder = Response.serverError();
         }
 
@@ -110,8 +107,9 @@ public class RoleResource
 
     @GET
     @Path( "{name}" )
-    @Produces( { MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_XML } )
-    public Role getRole( @PathParam( "name" ) final String name )
+    @Produces( { MediaType.APPLICATION_JSON } )
+    public Role getRole( @PathParam( "name" )
+    final String name )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()
@@ -122,7 +120,8 @@ public class RoleResource
 
     @PUT
     @Path( "{name}" )
-    public Response createRole( @PathParam( "name" ) final String name )
+    public Response createRole( @PathParam( "name" )
+    final String name )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()
@@ -132,8 +131,7 @@ public class RoleResource
         try
         {
             dataManager.createRole( name, true );
-            builder = Response.created( uriInfo.getAbsolutePathBuilder()
-                                               .build( name ) );
+            builder = Response.created( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
         catch ( final UserDataException e )
         {
@@ -146,7 +144,8 @@ public class RoleResource
 
     @DELETE
     @Path( "{name}" )
-    public Response deleteRole( @PathParam( "name" ) final String name )
+    public Response deleteRole( @PathParam( "name" )
+    final String name )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()

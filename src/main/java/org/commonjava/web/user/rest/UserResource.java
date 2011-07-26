@@ -20,7 +20,6 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriInfo;
 import javax.xml.bind.JAXBElement;
 
-import org.apache.shiro.authz.annotation.RequiresAuthentication;
 import org.commonjava.util.logging.Logger;
 import org.commonjava.web.common.model.Listing;
 import org.commonjava.web.common.model.MappingArray;
@@ -45,7 +44,7 @@ public class UserResource
 
     @GET
     @Path( "list" )
-    @Produces( { MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_XML } )
+    @Produces( { MediaType.APPLICATION_JSON } )
     public Listing<User> listUsers()
     {
         // FIXME: Un-comment this!!
@@ -57,8 +56,9 @@ public class UserResource
 
     @GET
     @Path( "{name}" )
-    @Produces( { MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON, MediaType.TEXT_XML } )
-    public User getUser( @PathParam( "name" ) final String name )
+    @Produces( { MediaType.APPLICATION_JSON } )
+    public User getUser( @PathParam( "name" )
+    final String name )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()
@@ -69,7 +69,8 @@ public class UserResource
 
     @PUT
     @Path( "{name}" )
-    public Response createUser( @PathParam( "name" ) final String name, final JAXBElement<User> element )
+    public Response createUser( @PathParam( "name" )
+    final String name, final JAXBElement<User> element )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()
@@ -83,8 +84,7 @@ public class UserResource
         try
         {
             dataManager.createUser( user, true );
-            builder = Response.created( uriInfo.getAbsolutePathBuilder()
-                                               .build( name ) );
+            builder = Response.created( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
         catch ( final UserDataException e )
         {
@@ -97,7 +97,8 @@ public class UserResource
 
     @POST
     @Path( "{name}/roles" )
-    public Response updateRoles( @PathParam( "name" ) final String name, final JAXBElement<MappingArray> element )
+    public Response updateRoles( @PathParam( "name" )
+    final String name, final JAXBElement<MappingArray> element )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()
@@ -110,9 +111,7 @@ public class UserResource
         final User user = dataManager.getUser( name );
         if ( user == null )
         {
-            return Response.status( Status.BAD_REQUEST )
-                           .header( "Reason", "Invalid user: " + name )
-                           .build();
+            return Response.status( Status.BAD_REQUEST ).header( "Reason", "Invalid user: " + name ).build();
         }
 
         final Set<Role> userRoles = new HashSet<Role>();
@@ -121,9 +120,8 @@ public class UserResource
             final Role role = dataManager.getRole( roleName );
             if ( role == null )
             {
-                return Response.status( Status.BAD_REQUEST )
-                               .header( "Reason", "Invalid role: " + roleName )
-                               .build();
+                return Response.status( Status.BAD_REQUEST ).header( "Reason",
+                                                                     "Invalid role: " + roleName ).build();
             }
 
             userRoles.add( role );
@@ -134,13 +132,13 @@ public class UserResource
         try
         {
             dataManager.updateUser( user, true );
-            builder = Response.ok()
-                              .contentLocation( uriInfo.getAbsolutePathBuilder()
-                                                       .build( name ) );
+            builder =
+                Response.ok().contentLocation( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
         catch ( final UserDataException e )
         {
-            logger.error( "Failed to update user: %s with roles: %s. Reason: %s", e, name, roleNames, e.getMessage() );
+            logger.error( "Failed to update user: %s with roles: %s. Reason: %s", e, name,
+                          roleNames, e.getMessage() );
             builder = Response.serverError();
         }
 
@@ -149,7 +147,8 @@ public class UserResource
 
     @POST
     @Path( "{name}" )
-    public Response updateUser( @PathParam( "name" ) final String name, final JAXBElement<User> element )
+    public Response updateUser( @PathParam( "name" )
+    final String name, final JAXBElement<User> element )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()
@@ -163,9 +162,8 @@ public class UserResource
         try
         {
             dataManager.updateUser( user, true );
-            builder = Response.ok()
-                              .contentLocation( uriInfo.getAbsolutePathBuilder()
-                                                       .build( name ) );
+            builder =
+                Response.ok().contentLocation( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
         catch ( final UserDataException e )
         {
@@ -178,7 +176,8 @@ public class UserResource
 
     @DELETE
     @Path( "{name}" )
-    public Response deleteUser( @PathParam( "name" ) final String name )
+    public Response deleteUser( @PathParam( "name" )
+    final String name )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()

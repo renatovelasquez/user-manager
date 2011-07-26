@@ -55,15 +55,14 @@ public class ShiroRealm
     {
         if ( !( token instanceof UsernamePasswordToken ) )
         {
-            throw new AuthenticationException( "Cannot use authentication token of type: " + token.getClass()
-                                                                                                  .getName()
-                + " with this service." );
+            throw new AuthenticationException( "Cannot use authentication token of type: "
+                + token.getClass().getName() + " with this service." );
         }
 
         final UsernamePasswordToken tok = (UsernamePasswordToken) token;
         final User user = dataManager.getUser( tok.getUsername() );
 
-        return user.getAuthenticationInfo();
+        return User.getAuthenticationInfo( user );
     }
 
 }
