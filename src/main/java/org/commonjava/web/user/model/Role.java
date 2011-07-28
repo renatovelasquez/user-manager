@@ -35,8 +35,7 @@ public class Role
     private Set<Permission> permissions;
 
     public Role()
-    {
-    }
+    {}
 
     public Role( final String name, final Permission... perms )
     {
@@ -70,21 +69,24 @@ public class Role
         this.name = name;
     }
 
-    public synchronized void addPermission( final Permission permission )
+    public synchronized boolean addPermission( final Permission permission )
     {
         if ( permissions == null )
         {
             permissions = new HashSet<Permission>();
         }
-        permissions.add( permission );
+
+        return permissions.add( permission );
     }
 
-    public void removePermission( final Permission permission )
+    public boolean removePermission( final Permission permission )
     {
         if ( permissions != null )
         {
-            permissions.remove( permission );
+            return permissions.remove( permission );
         }
+
+        return false;
     }
 
     public Set<Permission> getPermissions()
@@ -133,6 +135,11 @@ public class Role
     {
         this.permissions = role.getPermissions();
         return this;
+    }
+
+    public boolean containsPermission( final Permission perm )
+    {
+        return permissions != null && permissions.contains( perm );
     }
 
 }

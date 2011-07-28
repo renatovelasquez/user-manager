@@ -5,6 +5,7 @@ import java.util.Set;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -56,8 +57,9 @@ public class RoleResource
 
     @POST
     @Path( "{name}/permissions" )
-    public Response updatePermissions( @PathParam( "name" )
-    final String name, final JAXBElement<MappingArray> element )
+    @Consumes( { MediaType.APPLICATION_JSON } )
+    public Response updatePermissions( @PathParam( "name" ) final String name,
+                                       final JAXBElement<MappingArray> element )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()
@@ -91,7 +93,7 @@ public class RoleResource
 
         try
         {
-            dataManager.updateRole( role, true );
+            dataManager.updateRole( role );
             builder =
                 Response.ok().contentLocation( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
@@ -108,8 +110,7 @@ public class RoleResource
     @GET
     @Path( "{name}" )
     @Produces( { MediaType.APPLICATION_JSON } )
-    public Role getRole( @PathParam( "name" )
-    final String name )
+    public Role getRole( @PathParam( "name" ) final String name )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()
@@ -120,8 +121,8 @@ public class RoleResource
 
     @PUT
     @Path( "{name}" )
-    public Response createRole( @PathParam( "name" )
-    final String name )
+    @Consumes( { MediaType.APPLICATION_JSON } )
+    public Response createRole( @PathParam( "name" ) final String name )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()
@@ -130,7 +131,7 @@ public class RoleResource
         ResponseBuilder builder;
         try
         {
-            dataManager.createRole( name, true );
+            dataManager.createRole( name );
             builder = Response.created( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
         catch ( final UserDataException e )
@@ -144,8 +145,7 @@ public class RoleResource
 
     @DELETE
     @Path( "{name}" )
-    public Response deleteRole( @PathParam( "name" )
-    final String name )
+    public Response deleteRole( @PathParam( "name" ) final String name )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()

@@ -5,6 +5,7 @@ import java.util.Set;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -57,8 +58,7 @@ public class UserResource
     @GET
     @Path( "{name}" )
     @Produces( { MediaType.APPLICATION_JSON } )
-    public User getUser( @PathParam( "name" )
-    final String name )
+    public User getUser( @PathParam( "name" ) final String name )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()
@@ -69,8 +69,9 @@ public class UserResource
 
     @PUT
     @Path( "{name}" )
-    public Response createUser( @PathParam( "name" )
-    final String name, final JAXBElement<User> element )
+    @Consumes( { MediaType.APPLICATION_JSON } )
+    public Response createUser( @PathParam( "name" ) final String name,
+                                final JAXBElement<User> element )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()
@@ -83,7 +84,7 @@ public class UserResource
         ResponseBuilder builder;
         try
         {
-            dataManager.createUser( user, true );
+            dataManager.createUser( user );
             builder = Response.created( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
         catch ( final UserDataException e )
@@ -97,8 +98,9 @@ public class UserResource
 
     @POST
     @Path( "{name}/roles" )
-    public Response updateRoles( @PathParam( "name" )
-    final String name, final JAXBElement<MappingArray> element )
+    @Consumes( { MediaType.APPLICATION_JSON } )
+    public Response updateRoles( @PathParam( "name" ) final String name,
+                                 final JAXBElement<MappingArray> element )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()
@@ -131,7 +133,7 @@ public class UserResource
 
         try
         {
-            dataManager.updateUser( user, true );
+            dataManager.updateUser( user );
             builder =
                 Response.ok().contentLocation( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
@@ -147,8 +149,9 @@ public class UserResource
 
     @POST
     @Path( "{name}" )
-    public Response updateUser( @PathParam( "name" )
-    final String name, final JAXBElement<User> element )
+    @Consumes( { MediaType.APPLICATION_JSON } )
+    public Response updateUser( @PathParam( "name" ) final String name,
+                                final JAXBElement<User> element )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()
@@ -161,7 +164,7 @@ public class UserResource
         ResponseBuilder builder;
         try
         {
-            dataManager.updateUser( user, true );
+            dataManager.updateUser( user );
             builder =
                 Response.ok().contentLocation( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
@@ -176,8 +179,7 @@ public class UserResource
 
     @DELETE
     @Path( "{name}" )
-    public Response deleteUser( @PathParam( "name" )
-    final String name )
+    public Response deleteUser( @PathParam( "name" ) final String name )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()

@@ -9,13 +9,24 @@ import org.commonjava.web.user.model.User;
 public interface UserDataBackend
 {
 
+    UserNotificationContext createNotificationContext();
+
     void deleteUser( final String username )
+        throws UserDataException;
+
+    void deleteUser( final String username, final UserNotificationContext notificationContext )
         throws UserDataException;
 
     void deleteRole( final String name )
         throws UserDataException;
 
+    void deleteRole( final String name, final UserNotificationContext notificationContext )
+        throws UserDataException;
+
     void deletePermission( final String name )
+        throws UserDataException;
+
+    void deletePermission( final String name, final UserNotificationContext notificationContext )
         throws UserDataException;
 
     Role getRole( final String roleName );
@@ -24,13 +35,23 @@ public interface UserDataBackend
 
     User getUser( final String username );
 
-    Permission savePermission( final Permission perm, final boolean autoCommit )
+    Permission savePermission( final Permission perm )
         throws UserDataException;
 
-    Role saveRole( final Role role, final boolean autoCommit )
+    Permission savePermission( final Permission perm,
+                               final UserNotificationContext notificationContext )
         throws UserDataException;
 
-    User saveUser( final User user, final boolean autoCommit )
+    Role saveRole( final Role role )
+        throws UserDataException;
+
+    Role saveRole( final Role role, final UserNotificationContext notificationContext )
+        throws UserDataException;
+
+    User saveUser( final User user )
+        throws UserDataException;
+
+    User saveUser( final User user, UserNotificationContext notificationContext )
         throws UserDataException;
 
     List<Permission> getPermissions();

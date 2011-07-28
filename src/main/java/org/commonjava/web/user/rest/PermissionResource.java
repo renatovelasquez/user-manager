@@ -49,8 +49,7 @@ public class PermissionResource
     @GET
     @Path( "{name}" )
     @Produces( { MediaType.APPLICATION_JSON } )
-    public Permission getPermission( @PathParam( "name" )
-    final String name )
+    public Permission getPermission( @PathParam( "name" ) final String name )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()
@@ -61,8 +60,7 @@ public class PermissionResource
 
     @PUT
     @Path( "{name}" )
-    public Response createPermission( @PathParam( "name" )
-    final String name )
+    public Response createPermission( @PathParam( "name" ) final String name )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()
@@ -71,7 +69,7 @@ public class PermissionResource
         ResponseBuilder builder;
         try
         {
-            dataManager.createPermission( name, true );
+            dataManager.createPermission( name );
             builder = Response.created( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
         catch ( final UserDataException e )
@@ -85,8 +83,7 @@ public class PermissionResource
 
     @DELETE
     @Path( "{name}" )
-    public Response deletePermission( @PathParam( "name" )
-    final String name )
+    public Response deletePermission( @PathParam( "name" ) final String name )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()

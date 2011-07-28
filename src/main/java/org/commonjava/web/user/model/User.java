@@ -73,8 +73,7 @@ public class User
     private Set<Role> roles;
 
     public User()
-    {
-    }
+    {}
 
     public User( final String username, final String email, final String firstName,
                  final String lastName, final String passwordDigest )
@@ -139,16 +138,6 @@ public class User
     public void setEmail( final String email )
     {
         this.email = email;
-    }
-
-    public void addRole( final Role role )
-    {
-        if ( roles == null )
-        {
-            roles = new HashSet<Role>();
-        }
-
-        roles.add( role );
     }
 
     public Set<Role> getRoles()
@@ -217,6 +206,26 @@ public class User
         this.passwordDigest = user.getPasswordDigest();
 
         return this;
+    }
+
+    public synchronized boolean addRole( final Role role )
+    {
+        if ( roles == null )
+        {
+            roles = new HashSet<Role>();
+        }
+
+        return roles.add( role );
+    }
+
+    public boolean removeRole( final Role role )
+    {
+        if ( roles != null )
+        {
+            return roles.remove( role );
+        }
+
+        return false;
     }
 
 }

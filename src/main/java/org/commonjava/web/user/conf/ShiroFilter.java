@@ -16,9 +16,6 @@
  ******************************************************************************/
 package org.commonjava.web.user.conf;
 
-import javax.servlet.annotation.WebFilter;
-import javax.servlet.annotation.WebInitParam;
-
 import org.apache.shiro.web.servlet.IniShiroFilter;
 
 // @WebFilter( filterName = "shiro",

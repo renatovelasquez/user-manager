@@ -42,13 +42,15 @@ public class UserDataInitializer
     public void initializeAdmin()
         throws UserDataException
     {
+        UserNotificationContext ctx = dataManager.createNotificationContext();
+
         Permission perm = dataManager.getPermission( Permission.WILDCARD );
         if ( perm == null )
         {
             perm = new Permission( Permission.WILDCARD );
             logger.info( "Creating wildcard permission: %s", perm );
 
-            dataManager.createPermission( perm, true );
+            dataManager.createPermission( perm, ctx );
         }
 
         Role role = dataManager.getRole( Role.ADMIN );
@@ -58,7 +60,7 @@ public class UserDataInitializer
             role.addPermission( perm );
             logger.info( "Creating admin role: %s", role );
 
-            dataManager.createRole( role, true );
+            dataManager.createRole( role, ctx );
         }
 
         User user = dataManager.getUser( User.ADMIN );
@@ -68,8 +70,10 @@ public class UserDataInitializer
             user.addRole( role );
             logger.info( "Creating admin user: %s", user );
 
-            dataManager.createUser( user, true );
+            dataManager.createUser( user, ctx );
         }
+
+        ctx.sendNotifications();
     }
 
 }

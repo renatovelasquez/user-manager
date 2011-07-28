@@ -24,7 +24,9 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import javax.enterprise.event.Event;
 import javax.enterprise.inject.Produces;
@@ -61,13 +63,13 @@ public class DBUserDataBackend
     private EntityManager em;
 
     @Inject
-    private Event<User> userEventSrc;
+    private Event<Set<User>> userEventSrc;
 
     @Inject
-    private Event<Role> roleEventSrc;
+    private Event<Set<Role>> roleEventSrc;
 
     @Inject
-    private Event<Permission> permissionEventSrc;
+    private Event<Set<Permission>> permissionEventSrc;
 
     @Inject
     private UserTransaction tx;
@@ -97,11 +99,10 @@ public class DBUserDataBackend
         final CriteriaQuery<User> query = cb.createQuery( User.class );
         final Root<User> root = query.from( User.class );
 
-        query.select( root )
-             .orderBy( cb.asc( root.get( "lastName" ) ), cb.asc( root.get( "firstName" ) ) );
+        query.select( root ).orderBy( cb.asc( root.get( "lastName" ) ),
+                                      cb.asc( root.get( "firstName" ) ) );
 
-        return generalizeUsers( em.createQuery( query )
-                                  .getResultList() );
+        return generalizeUsers( em.createQuery( query ).getResultList() );
     }
 
     @Override
@@ -111,11 +112,9 @@ public class DBUserDataBackend
         final CriteriaQuery<Role> query = cb.createQuery( Role.class );
         final Root<Role> root = query.from( Role.class );
 
-        query.select( root )
-             .orderBy( cb.asc( root.get( "name" ) ) );
+        query.select( root ).orderBy( cb.asc( root.get( "name" ) ) );
 
-        return generalizeRoles( em.createQuery( query )
-                                  .getResultList() );
+        return generalizeRoles( em.createQuery( query ).getResultList() );
     }
 
     @Override
@@ -125,20 +124,25 @@ public class DBUserDataBackend
         final CriteriaQuery<Permission> query = cb.createQuery( Permission.class );
         final Root<Permission> root = query.from( Permission.class );
 
-        query.select( root )
-             .orderBy( cb.asc( root.get( "name" ) ) );
+        query.select( root ).orderBy( cb.asc( root.get( "name" ) ) );
 
-        return generalizePermissions( em.createQuery( query )
-                                        .getResultList() );
+        return generalizePermissions( em.createQuery( query ).getResultList() );
     }
 
     @Override
-    public User saveUser( final User user, final boolean autoCommit )
+    public User saveUser( final User user )
+        throws UserDataException
+    {
+        return saveUser( user, null );
+    }
+
+    @Override
+    public User saveUser( final User user, final UserNotificationContext notificationContext )
         throws UserDataException
     {
         try
         {
-            if ( autoCommit )
+            if ( notificationContext == null )
             {
                 tx.begin();
             }
@@ -156,7 +160,7 @@ public class DBUserDataBackend
                 logger.error( "\n\n\nUser exists: %s\n\n\n", e, user.getUsername() );
             }
 
-            if ( autoCommit )
+            if ( notificationContext == null )
             {
                 if ( success )
                 {
@@ -168,7 +172,14 @@ public class DBUserDataBackend
                 }
             }
 
-            userEventSrc.fire( user );
+            if ( notificationContext != null )
+            {
+                notificationContext.userChanged( user );
+            }
+            else
+            {
+                userEventSrc.fire( Collections.singleton( user ) );
+            }
 
             return user;
         }
@@ -195,12 +206,19 @@ public class DBUserDataBackend
     }
 
     @Override
-    public Role saveRole( final Role role, final boolean autoCommit )
+    public Role saveRole( final Role role )
+        throws UserDataException
+    {
+        return saveRole( role, null );
+    }
+
+    @Override
+    public Role saveRole( final Role role, final UserNotificationContext notificationContext )
         throws UserDataException
     {
         try
         {
-            if ( autoCommit )
+            if ( notificationContext == null )
             {
                 tx.begin();
             }
@@ -218,7 +236,7 @@ public class DBUserDataBackend
                 logger.error( "\n\n\nRole exists: %s\n\n\n", e, role.getName() );
             }
 
-            if ( autoCommit )
+            if ( notificationContext == null )
             {
                 if ( success )
                 {
@@ -230,7 +248,14 @@ public class DBUserDataBackend
                 }
             }
 
-            roleEventSrc.fire( role );
+            if ( notificationContext != null )
+            {
+                notificationContext.roleChanged( role );
+            }
+            else
+            {
+                roleEventSrc.fire( Collections.singleton( role ) );
+            }
 
             return role;
         }
@@ -257,12 +282,20 @@ public class DBUserDataBackend
     }
 
     @Override
-    public Permission savePermission( final Permission perm, final boolean autoCommit )
+    public Permission savePermission( final Permission perm )
+        throws UserDataException
+    {
+        return savePermission( perm, null );
+    }
+
+    @Override
+    public Permission savePermission( final Permission perm,
+                                      final UserNotificationContext notificationContext )
         throws UserDataException
     {
         try
         {
-            if ( autoCommit )
+            if ( notificationContext == null )
             {
                 tx.begin();
             }
@@ -280,7 +313,7 @@ public class DBUserDataBackend
                 logger.error( "\n\n\nPermission exists: %s\n\n\n", e, perm.getName() );
             }
 
-            if ( autoCommit )
+            if ( notificationContext == null )
             {
                 if ( success )
                 {
@@ -292,29 +325,41 @@ public class DBUserDataBackend
                 }
             }
 
-            permissionEventSrc.fire( perm );
+            if ( notificationContext != null )
+            {
+                notificationContext.permissionChanged( perm );
+            }
+            else
+            {
+                permissionEventSrc.fire( Collections.singleton( perm ) );
+            }
 
             return perm;
         }
         catch ( final NotSupportedException e )
         {
-            throw new UserDataException( "Cannot save permission: %s. Error: %s", e, perm, e.getMessage() );
+            throw new UserDataException( "Cannot save permission: %s. Error: %s", e, perm,
+                                         e.getMessage() );
         }
         catch ( final SystemException e )
         {
-            throw new UserDataException( "Cannot save permission: %s. Error: %s", e, perm, e.getMessage() );
+            throw new UserDataException( "Cannot save permission: %s. Error: %s", e, perm,
+                                         e.getMessage() );
         }
         catch ( final RollbackException e )
         {
-            throw new UserDataException( "Cannot save permission: %s. Error: %s", e, perm, e.getMessage() );
+            throw new UserDataException( "Cannot save permission: %s. Error: %s", e, perm,
+                                         e.getMessage() );
         }
         catch ( final HeuristicMixedException e )
         {
-            throw new UserDataException( "Cannot save permission: %s. Error: %s", e, perm, e.getMessage() );
+            throw new UserDataException( "Cannot save permission: %s. Error: %s", e, perm,
+                                         e.getMessage() );
         }
         catch ( final HeuristicRollbackException e )
         {
-            throw new UserDataException( "Cannot save permission: %s. Error: %s", e, perm, e.getMessage() );
+            throw new UserDataException( "Cannot save permission: %s. Error: %s", e, perm,
+                                         e.getMessage() );
         }
     }
 
@@ -325,15 +370,13 @@ public class DBUserDataBackend
         final CriteriaQuery<User> query = cb.createQuery( User.class );
         final Root<User> root = query.from( User.class );
 
-        query.select( root )
-             .where( cb.equal( root.get( "username" ), username ) );
+        query.select( root ).where( cb.equal( root.get( "username" ), username ) );
 
         User user = null;
         try
         {
             // TODO: cleaner way to check for user existence...
-            user = em.createQuery( query )
-                     .getSingleResult();
+            user = em.createQuery( query ).getSingleResult();
         }
         catch ( final NoResultException e )
         {
@@ -350,19 +393,18 @@ public class DBUserDataBackend
         final CriteriaQuery<Permission> query = cb.createQuery( Permission.class );
         final Root<Permission> root = query.from( Permission.class );
 
-        query.select( root )
-             .where( cb.equal( root.get( "name" ), permissionName ) );
+        query.select( root ).where( cb.equal( root.get( "name" ), permissionName ) );
 
         Permission perm = null;
         try
         {
             // TODO: cleaner way to check for user existence...
-            perm = em.createQuery( query )
-                     .getSingleResult();
+            perm = em.createQuery( query ).getSingleResult();
         }
         catch ( final NoResultException e )
         {
-            logger.debug( "Cannot find permission: %s. Error: %s", e, permissionName, e.getMessage() );
+            logger.debug( "Cannot find permission: %s. Error: %s", e, permissionName,
+                          e.getMessage() );
         }
 
         return perm;
@@ -375,16 +417,14 @@ public class DBUserDataBackend
         final CriteriaQuery<Role> query = cb.createQuery( Role.class );
         final Root<Role> root = query.from( Role.class );
 
-        query.select( root )
-             .where( cb.equal( root.get( "name" ), roleName ) );
+        query.select( root ).where( cb.equal( root.get( "name" ), roleName ) );
 
         Role role = null;
 
         try
         {
             // TODO: cleaner way to check for user existence...
-            role = em.createQuery( query )
-                     .getSingleResult();
+            role = em.createQuery( query ).getSingleResult();
         }
         catch ( final NoResultException e )
         {
@@ -394,22 +434,30 @@ public class DBUserDataBackend
         return role;
     }
 
-    // public void onUserChanged( @Observes( notifyObserver = Reception.IF_EXISTS ) final User user )
-    // {
-    // loadData();
-    // }
-    //
-    // @PostConstruct
-    // public void loadData()
-    // {
-    // }
-
     @Override
     public void deletePermission( final String name )
         throws UserDataException
     {
+        deletePermission( name, null );
+    }
+
+    @Override
+    public void deletePermission( final String name,
+                                  final UserNotificationContext notificationContext )
+        throws UserDataException
+    {
         try
         {
+            if ( notificationContext == null )
+            {
+                logger.info( "Starting transaction: %s", tx );
+                tx.begin();
+            }
+
+            logger.info( "Joining transaction: %s for entity manager: %s", tx, em );
+            em.joinTransaction();
+
+            boolean success = true;
             final Permission perm = getPermission( name );
             if ( perm == null )
             {
@@ -417,11 +465,64 @@ public class DBUserDataBackend
             }
 
             em.remove( perm );
+
+            if ( notificationContext == null )
+            {
+                if ( success )
+                {
+                    logger.info( "Committing transaction: %s", tx );
+                    tx.commit();
+                }
+                else
+                {
+                    tx.rollback();
+                }
+            }
+
+            if ( notificationContext != null )
+            {
+                notificationContext.permissionChanged( perm );
+            }
+            else
+            {
+                permissionEventSrc.fire( Collections.singleton( perm ) );
+            }
         }
         catch ( final IllegalArgumentException e )
         {
             logger.debug( "Cannot remove permission: %s. Error: %s", e, name, e.getMessage() );
-            throw new UserDataException( "Cannot delete permission: %s. Error: %s", e, name, e.getMessage() );
+            throw new UserDataException( "Cannot delete permission: %s. Error: %s", e, name,
+                                         e.getMessage() );
+        }
+        catch ( RollbackException e )
+        {
+            logger.debug( "Cannot remove permission: %s. Error: %s", e, name, e.getMessage() );
+            throw new UserDataException( "Cannot delete permission: %s. Error: %s", e, name,
+                                         e.getMessage() );
+        }
+        catch ( HeuristicMixedException e )
+        {
+            logger.debug( "Cannot remove permission: %s. Error: %s", e, name, e.getMessage() );
+            throw new UserDataException( "Cannot delete permission: %s. Error: %s", e, name,
+                                         e.getMessage() );
+        }
+        catch ( HeuristicRollbackException e )
+        {
+            logger.debug( "Cannot remove permission: %s. Error: %s", e, name, e.getMessage() );
+            throw new UserDataException( "Cannot delete permission: %s. Error: %s", e, name,
+                                         e.getMessage() );
+        }
+        catch ( SystemException e )
+        {
+            logger.debug( "Cannot remove permission: %s. Error: %s", e, name, e.getMessage() );
+            throw new UserDataException( "Cannot delete permission: %s. Error: %s", e, name,
+                                         e.getMessage() );
+        }
+        catch ( NotSupportedException e )
+        {
+            logger.debug( "Cannot remove permission: %s. Error: %s", e, name, e.getMessage() );
+            throw new UserDataException( "Cannot delete permission: %s. Error: %s", e, name,
+                                         e.getMessage() );
         }
     }
 
@@ -429,8 +530,23 @@ public class DBUserDataBackend
     public void deleteRole( final String name )
         throws UserDataException
     {
+        deleteRole( name, null );
+    }
+
+    @Override
+    public void deleteRole( final String name, final UserNotificationContext notificationContext )
+        throws UserDataException
+    {
         try
         {
+            if ( notificationContext == null )
+            {
+                tx.begin();
+            }
+
+            em.joinTransaction();
+
+            boolean success = true;
             final Role role = getRole( name );
             if ( role == null )
             {
@@ -438,11 +554,63 @@ public class DBUserDataBackend
             }
 
             em.remove( role );
+
+            if ( notificationContext == null )
+            {
+                if ( success )
+                {
+                    tx.commit();
+                }
+                else
+                {
+                    tx.rollback();
+                }
+            }
+
+            if ( notificationContext != null )
+            {
+                notificationContext.roleChanged( role );
+            }
+            else
+            {
+                roleEventSrc.fire( Collections.singleton( role ) );
+            }
         }
         catch ( final IllegalArgumentException e )
         {
             logger.debug( "Cannot remove role: %s. Error: %s", e, name, e.getMessage() );
-            throw new UserDataException( "Cannot delete role: %s. Error: %s", e, name, e.getMessage() );
+            throw new UserDataException( "Cannot delete role: %s. Error: %s", e, name,
+                                         e.getMessage() );
+        }
+        catch ( RollbackException e )
+        {
+            logger.debug( "Cannot remove role: %s. Error: %s", e, name, e.getMessage() );
+            throw new UserDataException( "Cannot delete role: %s. Error: %s", e, name,
+                                         e.getMessage() );
+        }
+        catch ( HeuristicMixedException e )
+        {
+            logger.debug( "Cannot remove role: %s. Error: %s", e, name, e.getMessage() );
+            throw new UserDataException( "Cannot delete role: %s. Error: %s", e, name,
+                                         e.getMessage() );
+        }
+        catch ( HeuristicRollbackException e )
+        {
+            logger.debug( "Cannot remove role: %s. Error: %s", e, name, e.getMessage() );
+            throw new UserDataException( "Cannot delete role: %s. Error: %s", e, name,
+                                         e.getMessage() );
+        }
+        catch ( SystemException e )
+        {
+            logger.debug( "Cannot remove role: %s. Error: %s", e, name, e.getMessage() );
+            throw new UserDataException( "Cannot delete role: %s. Error: %s", e, name,
+                                         e.getMessage() );
+        }
+        catch ( NotSupportedException e )
+        {
+            logger.debug( "Cannot remove role: %s. Error: %s", e, name, e.getMessage() );
+            throw new UserDataException( "Cannot delete role: %s. Error: %s", e, name,
+                                         e.getMessage() );
         }
     }
 
@@ -450,8 +618,23 @@ public class DBUserDataBackend
     public void deleteUser( final String username )
         throws UserDataException
     {
+        deleteUser( username, null );
+    }
+
+    @Override
+    public void deleteUser( final String username, final UserNotificationContext notificationContext )
+        throws UserDataException
+    {
         try
         {
+            if ( notificationContext == null )
+            {
+                tx.begin();
+            }
+
+            em.joinTransaction();
+
+            boolean success = true;
             final User user = getUser( username );
             if ( user == null )
             {
@@ -459,11 +642,63 @@ public class DBUserDataBackend
             }
 
             em.remove( user );
+
+            if ( notificationContext == null )
+            {
+                if ( success )
+                {
+                    tx.commit();
+                }
+                else
+                {
+                    tx.rollback();
+                }
+            }
+
+            if ( notificationContext != null )
+            {
+                notificationContext.userChanged( user );
+            }
+            else
+            {
+                userEventSrc.fire( Collections.singleton( user ) );
+            }
         }
         catch ( final IllegalArgumentException e )
         {
             logger.debug( "Cannot remove user: %s. Error: %s", e, username, e.getMessage() );
-            throw new UserDataException( "Cannot delete user: %s. Error: %s", e, username, e.getMessage() );
+            throw new UserDataException( "Cannot delete user: %s. Error: %s", e, username,
+                                         e.getMessage() );
+        }
+        catch ( RollbackException e )
+        {
+            logger.debug( "Cannot remove user: %s. Error: %s", e, username, e.getMessage() );
+            throw new UserDataException( "Cannot delete user: %s. Error: %s", e, username,
+                                         e.getMessage() );
+        }
+        catch ( HeuristicMixedException e )
+        {
+            logger.debug( "Cannot remove user: %s. Error: %s", e, username, e.getMessage() );
+            throw new UserDataException( "Cannot delete user: %s. Error: %s", e, username,
+                                         e.getMessage() );
+        }
+        catch ( HeuristicRollbackException e )
+        {
+            logger.debug( "Cannot remove user: %s. Error: %s", e, username, e.getMessage() );
+            throw new UserDataException( "Cannot delete user: %s. Error: %s", e, username,
+                                         e.getMessage() );
+        }
+        catch ( SystemException e )
+        {
+            logger.debug( "Cannot remove user: %s. Error: %s", e, username, e.getMessage() );
+            throw new UserDataException( "Cannot delete user: %s. Error: %s", e, username,
+                                         e.getMessage() );
+        }
+        catch ( NotSupportedException e )
+        {
+            logger.debug( "Cannot remove user: %s. Error: %s", e, username, e.getMessage() );
+            throw new UserDataException( "Cannot delete user: %s. Error: %s", e, username,
+                                         e.getMessage() );
         }
     }
 
@@ -480,7 +715,12 @@ public class DBUserDataBackend
     @Target( { ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER, ElementType.FIELD } )
     @Retention( RetentionPolicy.RUNTIME )
     public @interface UserRepository
+    {}
+
+    @Override
+    public UserNotificationContext createNotificationContext()
     {
+        return new UserNotificationContext( userEventSrc, roleEventSrc, permissionEventSrc );
     }
 
 }
