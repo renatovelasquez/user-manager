@@ -9,24 +9,13 @@ import org.commonjava.web.user.model.User;
 public interface UserDataBackend
 {
 
-    UserNotificationContext createNotificationContext();
-
-    void deleteUser( final String username )
+    void deleteUser( final String username, final boolean autoCommit )
         throws UserDataException;
 
-    void deleteUser( final String username, final UserNotificationContext notificationContext )
+    void deleteRole( final String name, final boolean autoCommit )
         throws UserDataException;
 
-    void deleteRole( final String name )
-        throws UserDataException;
-
-    void deleteRole( final String name, final UserNotificationContext notificationContext )
-        throws UserDataException;
-
-    void deletePermission( final String name )
-        throws UserDataException;
-
-    void deletePermission( final String name, final UserNotificationContext notificationContext )
+    void deletePermission( final String name, final boolean autoCommit )
         throws UserDataException;
 
     Role getRole( final String roleName );
@@ -35,23 +24,13 @@ public interface UserDataBackend
 
     User getUser( final String username );
 
-    Permission savePermission( final Permission perm )
+    Permission savePermission( final Permission perm, final boolean autoCommit )
         throws UserDataException;
 
-    Permission savePermission( final Permission perm,
-                               final UserNotificationContext notificationContext )
+    Role saveRole( final Role role, final boolean autoCommit )
         throws UserDataException;
 
-    Role saveRole( final Role role )
-        throws UserDataException;
-
-    Role saveRole( final Role role, final UserNotificationContext notificationContext )
-        throws UserDataException;
-
-    User saveUser( final User user )
-        throws UserDataException;
-
-    User saveUser( final User user, UserNotificationContext notificationContext )
+    User saveUser( final User user, final boolean autoCommit )
         throws UserDataException;
 
     List<Permission> getPermissions();

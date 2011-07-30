@@ -31,6 +31,9 @@ public class UserDataInitializer
     private final Logger logger = new Logger( getClass() );
 
     @Inject
+    private UserDataContext ctx;
+
+    @Inject
     private UserDataManager dataManager;
 
     @Inject
@@ -42,7 +45,9 @@ public class UserDataInitializer
     public void initializeAdmin()
         throws UserDataException
     {
-        UserNotificationContext ctx = dataManager.createNotificationContext();
+        // try
+        // {
+        ctx.begin();
 
         Permission perm = dataManager.getPermission( Permission.WILDCARD );
         if ( perm == null )
@@ -50,7 +55,7 @@ public class UserDataInitializer
             perm = new Permission( Permission.WILDCARD );
             logger.info( "Creating wildcard permission: %s", perm );
 
-            dataManager.createPermission( perm, ctx );
+            dataManager.createPermission( perm, false );
         }
 
         Role role = dataManager.getRole( Role.ADMIN );
@@ -60,7 +65,7 @@ public class UserDataInitializer
             role.addPermission( perm );
             logger.info( "Creating admin role: %s", role );
 
-            dataManager.createRole( role, ctx );
+            dataManager.createRole( role, false );
         }
 
         User user = dataManager.getUser( User.ADMIN );
@@ -70,10 +75,37 @@ public class UserDataInitializer
             user.addRole( role );
             logger.info( "Creating admin user: %s", user );
 
-            dataManager.createUser( user, ctx );
+            dataManager.createUser( user, false );
         }
 
+        ctx.commit();
         ctx.sendNotifications();
+        // }
+        // catch ( NotSupportedException e )
+        // {
+        // throw new UserDataException( "Failed to initialize admin user/role/permissions: %s", e,
+        // e.getMessage() );
+        // }
+        // catch ( SystemException e )
+        // {
+        // throw new UserDataException( "Failed to initialize admin user/role/permissions: %s", e,
+        // e.getMessage() );
+        // }
+        // catch ( RollbackException e )
+        // {
+        // throw new UserDataException( "Failed to initialize admin user/role/permissions: %s", e,
+        // e.getMessage() );
+        // }
+        // catch ( HeuristicMixedException e )
+        // {
+        // throw new UserDataException( "Failed to initialize admin user/role/permissions: %s", e,
+        // e.getMessage() );
+        // }
+        // catch ( HeuristicRollbackException e )
+        // {
+        // throw new UserDataException( "Failed to initialize admin user/role/permissions: %s", e,
+        // e.getMessage() );
+        // }
     }
 
 }

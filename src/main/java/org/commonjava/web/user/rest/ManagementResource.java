@@ -21,7 +21,7 @@ public class ManagementResource
     @Inject
     private UserDataInitializer userDataInitializer;
 
-    @Path( "reinit-admin" )
+    @Path( "init" )
     @POST
     public Response reinitializeAdmin()
     {

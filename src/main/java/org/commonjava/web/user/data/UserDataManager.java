@@ -32,12 +32,6 @@ import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
-import javax.transaction.HeuristicMixedException;
-import javax.transaction.HeuristicRollbackException;
-import javax.transaction.NotSupportedException;
-import javax.transaction.RollbackException;
-import javax.transaction.SystemException;
-import javax.transaction.UserTransaction;
 
 import org.commonjava.util.logging.Logger;
 import org.commonjava.web.user.model.Permission;
@@ -52,9 +46,6 @@ public class UserDataManager
     @Inject
     private UserDataBackend backend;
 
-    @Inject
-    private UserTransaction tx;
-
     private List<User> users;
 
     private List<Role> roles;
@@ -67,18 +58,10 @@ public class UserDataManager
     @Inject
     private PasswordManager passwordManager;
 
-    public UserNotificationContext createNotificationContext()
-    {
-        return backend.createNotificationContext();
-    }
+    @Inject
+    private UserDataContext context;
 
-    public Permission createPermission( final String name )
-        throws UserDataException
-    {
-        return createPermission( name, null );
-    }
-
-    public Permission createPermission( final String name, final UserNotificationContext context )
+    public Permission createPermission( final String name, final boolean autoCommit )
         throws UserDataException
     {
         if ( backend.hasPermission( name ) )
@@ -86,16 +69,10 @@ public class UserDataManager
             throw new UserDataException( "Permission already exists: %s", name );
         }
 
-        return backend.savePermission( new Permission( name ), context );
+        return backend.savePermission( new Permission( name ), autoCommit );
     }
 
-    public Permission createPermission( final Permission perm )
-        throws UserDataException
-    {
-        return createPermission( perm, null );
-    }
-
-    public Permission createPermission( final Permission perm, final UserNotificationContext context )
+    public Permission createPermission( final Permission perm, final boolean autoCommit )
         throws UserDataException
     {
         if ( backend.hasPermission( perm.getName() ) )
@@ -103,16 +80,10 @@ public class UserDataManager
             throw new UserDataException( "Permission already exists: %s", perm.getName() );
         }
 
-        return backend.savePermission( perm, context );
+        return backend.savePermission( perm, autoCommit );
     }
 
-    public Role createRole( final String name )
-        throws UserDataException
-    {
-        return createRole( name, null );
-    }
-
-    public Role createRole( final String name, final UserNotificationContext context )
+    public Role createRole( final String name, final boolean autoCommit )
         throws UserDataException
     {
         if ( backend.hasRole( name ) )
@@ -120,16 +91,10 @@ public class UserDataManager
             throw new UserDataException( "Role already exists: %s", name );
         }
 
-        return backend.saveRole( new Role( name ), context );
+        return backend.saveRole( new Role( name ), autoCommit );
     }
 
-    public Role createRole( final Role role )
-        throws UserDataException
-    {
-        return createRole( role, null );
-    }
-
-    public Role createRole( final Role role, final UserNotificationContext context )
+    public Role createRole( final Role role, final boolean autoCommit )
         throws UserDataException
     {
         if ( backend.hasRole( role.getName() ) )
@@ -137,16 +102,10 @@ public class UserDataManager
             throw new UserDataException( "Role already exists: %s", role.getName() );
         }
 
-        return backend.saveRole( role, context );
+        return backend.saveRole( role, autoCommit );
     }
 
-    public Role updateRole( final Role role )
-        throws UserDataException
-    {
-        return updateRole( role, null );
-    }
-
-    public Role updateRole( final Role role, final UserNotificationContext context )
+    public Role updateRole( final Role role, final boolean autoCommit )
         throws UserDataException
     {
         if ( !backend.hasRole( role.getName() ) )
@@ -160,16 +119,10 @@ public class UserDataManager
             existing = existing.updateFrom( role );
         }
 
-        return backend.saveRole( existing, context );
+        return backend.saveRole( existing, autoCommit );
     }
 
-    public User createUser( final User user )
-        throws UserDataException
-    {
-        return createUser( user, null );
-    }
-
-    public User createUser( final User user, final UserNotificationContext context )
+    public User createUser( final User user, final boolean autoCommit )
         throws UserDataException
     {
         if ( backend.hasUser( user.getUsername() ) )
@@ -191,16 +144,10 @@ public class UserDataManager
             user.setPasswordDigest( passwordManager.digestPassword( password ) );
         }
 
-        return backend.saveUser( user, context );
+        return backend.saveUser( user, autoCommit );
     }
 
-    public User updateUser( final User user )
-        throws UserDataException
-    {
-        return updateUser( user, null );
-    }
-
-    public User updateUser( final User user, final UserNotificationContext context )
+    public User updateUser( final User user, final boolean autoCommit )
         throws UserDataException
     {
         if ( !backend.hasUser( user.getUsername() ) )
@@ -214,7 +161,7 @@ public class UserDataManager
             existing = existing.updateFrom( user );
         }
 
-        return backend.saveUser( existing, context );
+        return backend.saveUser( existing, autoCommit );
     }
 
     @Produces
@@ -253,219 +200,183 @@ public class UserDataManager
         return backend.getRole( roleName );
     }
 
-    public Map<String, Permission> createCRUDPermissions( final String namespace, final String name )
-        throws UserDataException
-    {
-        return createCRUDPermissions( namespace, name, null );
-    }
-
     public Map<String, Permission> createCRUDPermissions( final String namespace,
                                                           final String name,
-                                                          UserNotificationContext context )
+                                                          final boolean autoCommit )
         throws UserDataException
     {
-        boolean autoCommit = context == null;
-
-        if ( context == null )
+        // try
+        // {
+        if ( autoCommit )
         {
-            context = backend.createNotificationContext();
+            context.begin();
         }
 
-        try
-        {
-            if ( autoCommit )
-            {
-                tx.begin();
-            }
+        final Map<String, Permission> perms = new HashMap<String, Permission>();
+        perms.put( CREATE, new Permission( namespace, name, CREATE ) );
+        perms.put( READ, new Permission( namespace, name, READ ) );
+        perms.put( UPDATE, new Permission( namespace, name, UPDATE ) );
+        perms.put( DELETE, new Permission( namespace, name, DELETE ) );
 
-            final Map<String, Permission> perms = new HashMap<String, Permission>();
-            perms.put( CREATE, new Permission( namespace, name, CREATE ) );
-            perms.put( READ, new Permission( namespace, name, READ ) );
-            perms.put( UPDATE, new Permission( namespace, name, UPDATE ) );
-            perms.put( DELETE, new Permission( namespace, name, DELETE ) );
+        for ( final Permission perm : perms.values() )
+        {
+            backend.savePermission( perm, false );
+        }
 
-            for ( final Permission perm : perms.values() )
-            {
-                backend.savePermission( perm, context );
-            }
+        if ( autoCommit )
+        {
+            context.commit();
+            context.sendNotifications();
+        }
 
-            if ( autoCommit )
-            {
-                tx.commit();
-                context.sendNotifications();
-            }
-
-            return perms;
-        }
-        catch ( final NotSupportedException e )
-        {
-            throw new UserDataException( "Cannot create CRUD permissions for: %s:%s. Error: %s", e,
-                                         namespace, name, e.getMessage() );
-        }
-        catch ( final SystemException e )
-        {
-            throw new UserDataException( "Cannot create CRUD permissions for: %s:%s. Error: %s", e,
-                                         namespace, name, e.getMessage() );
-        }
-        catch ( final RollbackException e )
-        {
-            throw new UserDataException( "Cannot create CRUD permissions for: %s:%s. Error: %s", e,
-                                         namespace, name, e.getMessage() );
-        }
-        catch ( final HeuristicMixedException e )
-        {
-            throw new UserDataException( "Cannot create CRUD permissions for: %s:%s. Error: %s", e,
-                                         namespace, name, e.getMessage() );
-        }
-        catch ( final HeuristicRollbackException e )
-        {
-            throw new UserDataException( "Cannot create CRUD permissions for: %s:%s. Error: %s", e,
-                                         namespace, name, e.getMessage() );
-        }
+        return perms;
+        // }
+        // catch ( final NotSupportedException e )
+        // {
+        // throw new UserDataException( "Cannot create CRUD permissions for: %s:%s. Error: %s", e,
+        // namespace, name, e.getMessage() );
+        // }
+        // catch ( final SystemException e )
+        // {
+        // throw new UserDataException( "Cannot create CRUD permissions for: %s:%s. Error: %s", e,
+        // namespace, name, e.getMessage() );
+        // }
+        // catch ( final RollbackException e )
+        // {
+        // throw new UserDataException( "Cannot create CRUD permissions for: %s:%s. Error: %s", e,
+        // namespace, name, e.getMessage() );
+        // }
+        // catch ( final HeuristicMixedException e )
+        // {
+        // throw new UserDataException( "Cannot create CRUD permissions for: %s:%s. Error: %s", e,
+        // namespace, name, e.getMessage() );
+        // }
+        // catch ( final HeuristicRollbackException e )
+        // {
+        // throw new UserDataException( "Cannot create CRUD permissions for: %s:%s. Error: %s", e,
+        // namespace, name, e.getMessage() );
+        // }
     }
 
-    public void deletePermission( final String name )
+    public void deletePermission( final String name, final boolean autoCommit )
         throws UserDataException
     {
-        deletePermission( name, null );
+        // try
+        // {
+        if ( autoCommit )
+        {
+            context.begin();
+        }
+
+        Permission perm = new Permission( name );
+        for ( Role role : roles )
+        {
+            logger.info( "\n\n\n\nChecking Role: %s\n\nfor permission: '%s'\n\n\n\n", role, perm );
+
+            if ( role.removePermission( perm ) )
+            {
+                logger.info( "\n\n\n\nUpdating Role: %s to remove permission: %s\n\n\n\n", role,
+                             perm );
+                backend.saveRole( role, false );
+            }
+
+            logger.info( "\n\n\n\nAfter removal attempt, Role is: %s\n\n\n\n", role );
+        }
+
+        logger.info( "\n\n\n\nRemoving permission: %s\n\n\n\n", perm );
+        backend.deletePermission( name, false );
+
+        if ( autoCommit )
+        {
+            context.commit();
+            context.sendNotifications();
+        }
+        // }
+        // catch ( final NotSupportedException e )
+        // {
+        // throw new UserDataException( "Cannot remove role: %s. Error: %s", e, name,
+        // e.getMessage() );
+        // }
+        // catch ( final SystemException e )
+        // {
+        // throw new UserDataException( "Cannot remove role: %s. Error: %s", e, name,
+        // e.getMessage() );
+        // }
+        // catch ( final RollbackException e )
+        // {
+        // throw new UserDataException( "Cannot remove role: %s. Error: %s", e, name,
+        // e.getMessage() );
+        // }
+        // catch ( final HeuristicMixedException e )
+        // {
+        // throw new UserDataException( "Cannot remove role: %s. Error: %s", e, name,
+        // e.getMessage() );
+        // }
+        // catch ( final HeuristicRollbackException e )
+        // {
+        // throw new UserDataException( "Cannot remove role: %s. Error: %s", e, name,
+        // e.getMessage() );
+        // }
     }
 
-    public void deletePermission( final String name, UserNotificationContext context )
+    public void deleteRole( final String name, final boolean autoCommit )
         throws UserDataException
     {
-        boolean autoCommit = context == null;
-
-        if ( context == null )
+        // try
+        // {
+        if ( autoCommit )
         {
-            context = backend.createNotificationContext();
+            context.begin();
         }
-        try
+
+        for ( User user : users )
         {
-            if ( autoCommit )
+            Role role = new Role( name );
+            if ( user.removeRole( role ) )
             {
-                tx.begin();
-            }
-
-            for ( Role role : roles )
-            {
-                Permission perm = new Permission( name );
-                if ( role.removePermission( perm ) )
-                {
-                    backend.saveRole( role, context );
-                }
-            }
-
-            backend.deletePermission( name, context );
-
-            if ( autoCommit )
-            {
-                tx.commit();
-                context.sendNotifications();
+                backend.saveUser( user, false );
             }
         }
-        catch ( final NotSupportedException e )
+
+        backend.deleteRole( name, false );
+
+        if ( autoCommit )
         {
-            throw new UserDataException( "Cannot remove role: %s. Error: %s", e, name,
-                                         e.getMessage() );
+            context.commit();
+            context.sendNotifications();
         }
-        catch ( final SystemException e )
-        {
-            throw new UserDataException( "Cannot remove role: %s. Error: %s", e, name,
-                                         e.getMessage() );
-        }
-        catch ( final RollbackException e )
-        {
-            throw new UserDataException( "Cannot remove role: %s. Error: %s", e, name,
-                                         e.getMessage() );
-        }
-        catch ( final HeuristicMixedException e )
-        {
-            throw new UserDataException( "Cannot remove role: %s. Error: %s", e, name,
-                                         e.getMessage() );
-        }
-        catch ( final HeuristicRollbackException e )
-        {
-            throw new UserDataException( "Cannot remove role: %s. Error: %s", e, name,
-                                         e.getMessage() );
-        }
+        // }
+        // catch ( final NotSupportedException e )
+        // {
+        // throw new UserDataException( "Cannot remove user: %s. Error: %s", e, name,
+        // e.getMessage() );
+        // }
+        // catch ( final SystemException e )
+        // {
+        // throw new UserDataException( "Cannot remove user: %s. Error: %s", e, name,
+        // e.getMessage() );
+        // }
+        // catch ( final RollbackException e )
+        // {
+        // throw new UserDataException( "Cannot remove user: %s. Error: %s", e, name,
+        // e.getMessage() );
+        // }
+        // catch ( final HeuristicMixedException e )
+        // {
+        // throw new UserDataException( "Cannot remove user: %s. Error: %s", e, name,
+        // e.getMessage() );
+        // }
+        // catch ( final HeuristicRollbackException e )
+        // {
+        // throw new UserDataException( "Cannot remove user: %s. Error: %s", e, name,
+        // e.getMessage() );
+        // }
     }
 
-    public void deleteRole( final String name )
+    public void deleteUser( final String username, final boolean autoCommit )
         throws UserDataException
     {
-        deleteRole( name, null );
-    }
-
-    public void deleteRole( final String name, UserNotificationContext context )
-        throws UserDataException
-    {
-        boolean autoCommit = context == null;
-
-        if ( context == null )
-        {
-            context = backend.createNotificationContext();
-        }
-        try
-        {
-            if ( autoCommit )
-            {
-                tx.begin();
-            }
-
-            for ( User user : users )
-            {
-                Role role = new Role( name );
-                if ( user.removeRole( role ) )
-                {
-                    backend.saveUser( user, context );
-                }
-            }
-
-            backend.deleteRole( name, context );
-
-            if ( autoCommit )
-            {
-                tx.commit();
-                context.sendNotifications();
-            }
-        }
-        catch ( final NotSupportedException e )
-        {
-            throw new UserDataException( "Cannot remove user: %s. Error: %s", e, name,
-                                         e.getMessage() );
-        }
-        catch ( final SystemException e )
-        {
-            throw new UserDataException( "Cannot remove user: %s. Error: %s", e, name,
-                                         e.getMessage() );
-        }
-        catch ( final RollbackException e )
-        {
-            throw new UserDataException( "Cannot remove user: %s. Error: %s", e, name,
-                                         e.getMessage() );
-        }
-        catch ( final HeuristicMixedException e )
-        {
-            throw new UserDataException( "Cannot remove user: %s. Error: %s", e, name,
-                                         e.getMessage() );
-        }
-        catch ( final HeuristicRollbackException e )
-        {
-            throw new UserDataException( "Cannot remove user: %s. Error: %s", e, name,
-                                         e.getMessage() );
-        }
-    }
-
-    public void deleteUser( final String username )
-        throws UserDataException
-    {
-        deleteUser( username, null );
-    }
-
-    public void deleteUser( final String username, final UserNotificationContext context )
-        throws UserDataException
-    {
-        backend.deleteUser( username, context );
+        backend.deleteUser( username, autoCommit );
     }
 
     public synchronized void onUserChanged( @Observes( notifyObserver = Reception.IF_EXISTS ) final User user )

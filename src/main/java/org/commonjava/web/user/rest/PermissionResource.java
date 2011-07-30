@@ -69,7 +69,7 @@ public class PermissionResource
         ResponseBuilder builder;
         try
         {
-            dataManager.createPermission( name );
+            dataManager.createPermission( name, true );
             builder = Response.created( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
         catch ( final UserDataException e )
@@ -92,7 +92,7 @@ public class PermissionResource
         ResponseBuilder builder;
         try
         {
-            dataManager.deletePermission( name );
+            dataManager.deletePermission( name, true );
             builder = Response.ok();
         }
         catch ( final UserDataException e )

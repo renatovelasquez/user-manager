@@ -93,7 +93,7 @@ public class RoleResource
 
         try
         {
-            dataManager.updateRole( role );
+            dataManager.updateRole( role, true );
             builder =
                 Response.ok().contentLocation( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
@@ -131,7 +131,7 @@ public class RoleResource
         ResponseBuilder builder;
         try
         {
-            dataManager.createRole( name );
+            dataManager.createRole( name, true );
             builder = Response.created( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
         catch ( final UserDataException e )
@@ -154,7 +154,7 @@ public class RoleResource
         ResponseBuilder builder;
         try
         {
-            dataManager.deleteRole( name );
+            dataManager.deleteRole( name, true );
             builder = Response.ok();
         }
         catch ( final UserDataException e )

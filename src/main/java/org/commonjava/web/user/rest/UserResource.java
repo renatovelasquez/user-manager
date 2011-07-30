@@ -9,7 +9,6 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -67,29 +66,29 @@ public class UserResource
         return dataManager.getUser( name );
     }
 
-    @PUT
-    @Path( "{name}" )
+    @POST
     @Consumes( { MediaType.APPLICATION_JSON } )
-    public Response createUser( @PathParam( "name" ) final String name,
-                                final JAXBElement<User> element )
+    public Response createUser( final User user )
     {
         // FIXME: Un-comment this!!
         // SecurityUtils.getSubject()
         // .checkPermission( Permission.name( User.NAMESPACE, Permission.ADMIN ) );
 
         // TODO: Validation!
-        final User user = element.getValue();
-        user.setUsername( name );
+        // final User user = element.getValue();
+        // user.setUsername( name );
 
         ResponseBuilder builder;
         try
         {
-            dataManager.createUser( user );
-            builder = Response.created( uriInfo.getAbsolutePathBuilder().build( name ) );
+            dataManager.createUser( user, true );
+            builder =
+                Response.created( uriInfo.getAbsolutePathBuilder().build( user.getUsername() ) );
         }
         catch ( final UserDataException e )
         {
-            logger.error( "Failed to create user: %s. Reason: %s", e, name, e.getMessage() );
+            logger.error( "Failed to create user: %s. Reason: %s", e, user.getUsername(),
+                          e.getMessage() );
             builder = Response.serverError();
         }
 
@@ -133,7 +132,7 @@ public class UserResource
 
         try
         {
-            dataManager.updateUser( user );
+            dataManager.updateUser( user, true );
             builder =
                 Response.ok().contentLocation( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
@@ -164,7 +163,7 @@ public class UserResource
         ResponseBuilder builder;
         try
         {
-            dataManager.updateUser( user );
+            dataManager.updateUser( user, true );
             builder =
                 Response.ok().contentLocation( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
@@ -188,7 +187,7 @@ public class UserResource
         ResponseBuilder builder;
         try
         {
-            dataManager.deleteUser( name );
+            dataManager.deleteUser( name, true );
             builder = Response.ok();
         }
         catch ( final UserDataException e )

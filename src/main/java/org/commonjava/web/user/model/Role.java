@@ -104,7 +104,7 @@ public class Role
     {
         final int prime = 31;
         int result = 1;
-        result = prime * result + id;
+        result = prime * result + name.hashCode();
         return result;
     }
 
@@ -140,6 +140,14 @@ public class Role
     public boolean containsPermission( final Permission perm )
     {
         return permissions != null && permissions.contains( perm );
+    }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder builder = new StringBuilder();
+        builder.append( "Role [id=" ).append( id ).append( ", name=" ).append( name ).append( "\n\tpermissions=" ).append( permissions ).append( "]" );
+        return builder.toString();
     }
 
 }

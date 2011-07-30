@@ -40,8 +40,7 @@ public class Permission
     private String name;
 
     public Permission()
-    {
-    }
+    {}
 
     public Permission( final String... nameParts )
     {
@@ -73,7 +72,7 @@ public class Permission
     {
         final int prime = 31;
         int result = 1;
-        result = prime * result + id;
+        result = prime * result + name.hashCode();
         return result;
     }
 
@@ -118,7 +117,7 @@ public class Permission
     @Override
     public String toString()
     {
-        return String.format( "Permission@%d [%s]", id, name );
+        return String.format( "Permission@%d [%s]", hashCode(), name );
     }
 
     public static String name( final String... parts )
