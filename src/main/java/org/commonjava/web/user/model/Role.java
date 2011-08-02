@@ -131,12 +131,6 @@ public class Role
         return true;
     }
 
-    public Role updateFrom( final Role role )
-    {
-        this.permissions = role.getPermissions();
-        return this;
-    }
-
     public boolean containsPermission( final Permission perm )
     {
         return permissions != null && permissions.contains( perm );

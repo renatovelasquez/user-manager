@@ -24,8 +24,11 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import javax.enterprise.event.Event;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 import javax.inject.Qualifier;
@@ -37,6 +40,7 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
+import javax.transaction.UserTransaction;
 
 import org.commonjava.util.logging.Logger;
 import org.commonjava.web.user.model.Permission;
@@ -54,7 +58,22 @@ public class DBUserDataBackend
     private EntityManager em;
 
     @Inject
-    private UserDataContext dataContext;
+    private Event<User> userEventSrc;
+
+    @Inject
+    private Event<Role> roleEventSrc;
+
+    @Inject
+    private Event<Permission> permissionEventSrc;
+
+    @Inject
+    private UserTransaction tx;
+
+    @Override
+    public UserDataContext createContext()
+    {
+        return new UserDataContext( userEventSrc, roleEventSrc, permissionEventSrc, tx, em );
+    }
 
     @Override
     public boolean hasUser( final String username )
@@ -112,203 +131,109 @@ public class DBUserDataBackend
     }
 
     @Override
-    public User saveUser( final User user, final boolean autoCommit )
+    public User saveUser( final User user, final UserDataContext dataContext )
         throws UserDataException
     {
-        // try
-        // {
-        // if ( autoCommit )
-        // {
-        dataContext.begin();
-        // }
-
-        boolean success = true;
-        try
+        User u = getUser( user.getUsername() );
+        if ( u == null || u == user )
         {
-            em.persist( user );
-        }
-        catch ( final EntityExistsException e )
-        {
-            success = false;
-            logger.error( "\n\n\nUser exists: %s\n\n\n", e, user.getUsername() );
-        }
-
-        dataContext.userChanged( user );
-
-        // if ( autoCommit )
-        // {
-        if ( success )
-        {
-            dataContext.commit();
-
-            if ( autoCommit )
-            {
-                dataContext.sendNotifications();
-            }
+            u = user;
         }
         else
         {
-            dataContext.rollback();
+            u.updateFrom( user, getRoles( user.getRoles() ) );
         }
-        // }
 
-        return user;
-        // }
-        // catch ( final NotSupportedException e )
-        // {
-        // throw new UserDataException( "Cannot save user: %s. Error: %s", e, user, e.getMessage() );
-        // }
-        // catch ( final SystemException e )
-        // {
-        // throw new UserDataException( "Cannot save user: %s. Error: %s", e, user, e.getMessage() );
-        // }
-        // catch ( final RollbackException e )
-        // {
-        // throw new UserDataException( "Cannot save user: %s. Error: %s", e, user, e.getMessage() );
-        // }
-        // catch ( final HeuristicMixedException e )
-        // {
-        // throw new UserDataException( "Cannot save user: %s. Error: %s", e, user, e.getMessage() );
-        // }
-        // catch ( final HeuristicRollbackException e )
-        // {
-        // throw new UserDataException( "Cannot save user: %s. Error: %s", e, user, e.getMessage() );
-        // }
-    }
-
-    @Override
-    public Role saveRole( final Role role, final boolean autoCommit )
-        throws UserDataException
-    {
-        // try
-        // {
-        // if ( autoCommit )
-        // {
-        dataContext.begin();
-        // }
-
-        boolean success = true;
         try
         {
-            em.persist( role );
+            em.persist( u );
         }
         catch ( final EntityExistsException e )
         {
-            success = false;
-            logger.error( "\n\n\nRole exists: %s\n\n\n", e, role.getName() );
+            throw new UserDataException( "User exists: %s. Error: %s", e, user.getUsername(),
+                                         e.getMessage() );
         }
 
-        dataContext.roleChanged( role );
+        dataContext.userChanged( u );
 
-        // if ( autoCommit )
-        // {
-        if ( success )
+        return u;
+    }
+
+    private Set<Role> getRoles( final Set<Role> roles )
+    {
+        Set<Role> result = new HashSet<Role>( roles.size() );
+        for ( Role role : roles )
         {
-            dataContext.commit();
-
-            if ( autoCommit )
-            {
-                dataContext.sendNotifications();
-            }
+            result.add( getRole( role.getName() ) );
         }
-        else
-        {
-            dataContext.rollback();
-        }
-        // }
 
-        return role;
-        // }
-        // catch ( final NotSupportedException e )
-        // {
-        // throw new UserDataException( "Cannot save role: %s. Error: %s", e, role, e.getMessage() );
-        // }
-        // catch ( final SystemException e )
-        // {
-        // throw new UserDataException( "Cannot save role: %s. Error: %s", e, role, e.getMessage() );
-        // }
-        // catch ( final RollbackException e )
-        // {
-        // throw new UserDataException( "Cannot save role: %s. Error: %s", e, role, e.getMessage() );
-        // }
-        // catch ( final HeuristicMixedException e )
-        // {
-        // throw new UserDataException( "Cannot save role: %s. Error: %s", e, role, e.getMessage() );
-        // }
-        // catch ( final HeuristicRollbackException e )
-        // {
-        // throw new UserDataException( "Cannot save role: %s. Error: %s", e, role, e.getMessage() );
-        // }
+        return result;
     }
 
     @Override
-    public Permission savePermission( final Permission perm, final boolean autoCommit )
+    public Role saveRole( final Role role, final UserDataContext dataContext )
         throws UserDataException
     {
-        // try
-        // {
-        // if ( autoCommit )
-        // {
-        dataContext.begin();
-        // }
+        Role r = getRole( role.getName() );
+        if ( r == null || r == role )
+        {
+            r = role;
+        }
+        else
+        {
+            r.setPermissions( getPermissions( role.getPermissions() ) );
+        }
 
-        boolean success = true;
+        try
+        {
+            em.persist( r );
+        }
+        catch ( final EntityExistsException e )
+        {
+            throw new UserDataException( "Role exists: %s. Error: %s", e, role.getName(),
+                                         e.getMessage() );
+        }
+
+        dataContext.roleChanged( r );
+
+        return r;
+    }
+
+    private Set<Permission> getPermissions( final Set<Permission> permissions )
+    {
+        Set<Permission> perms = new HashSet<Permission>( permissions.size() );
+        for ( Permission permission : permissions )
+        {
+            perms.add( getPermission( permission.getName() ) );
+        }
+
+        return perms;
+    }
+
+    @Override
+    public Permission savePermission( final Permission perm, final UserDataContext dataContext )
+        throws UserDataException
+    {
+        Permission p = getPermission( perm.getName() );
+        if ( p != null )
+        {
+            logger.warn( "Permission: '%s' already exists! Skipping.", perm.getName() );
+            return p;
+        }
+
         try
         {
             em.persist( perm );
         }
         catch ( final EntityExistsException e )
         {
-            success = false;
-            logger.error( "\n\n\nPermission exists: %s\n\n\n", e, perm.getName() );
+            throw new UserDataException( "Permission exists: %s. Error: %s", e, perm.getName(),
+                                         e.getMessage() );
         }
 
         dataContext.permissionChanged( perm );
 
-        // if ( autoCommit )
-        // {
-        if ( success )
-        {
-            dataContext.commit();
-
-            if ( autoCommit )
-            {
-                dataContext.sendNotifications();
-            }
-        }
-        else
-        {
-            dataContext.rollback();
-        }
-        // }
-
         return perm;
-        // }
-        // catch ( final NotSupportedException e )
-        // {
-        // throw new UserDataException( "Cannot save permission: %s. Error: %s", e, perm,
-        // e.getMessage() );
-        // }
-        // catch ( final SystemException e )
-        // {
-        // throw new UserDataException( "Cannot save permission: %s. Error: %s", e, perm,
-        // e.getMessage() );
-        // }
-        // catch ( final RollbackException e )
-        // {
-        // throw new UserDataException( "Cannot save permission: %s. Error: %s", e, perm,
-        // e.getMessage() );
-        // }
-        // catch ( final HeuristicMixedException e )
-        // {
-        // throw new UserDataException( "Cannot save permission: %s. Error: %s", e, perm,
-        // e.getMessage() );
-        // }
-        // catch ( final HeuristicRollbackException e )
-        // {
-        // throw new UserDataException( "Cannot save permission: %s. Error: %s", e, perm,
-        // e.getMessage() );
-        // }
     }
 
     @Override
@@ -383,17 +308,9 @@ public class DBUserDataBackend
     }
 
     @Override
-    public void deletePermission( final String name, final boolean autoCommit )
+    public void deletePermission( final String name, final UserDataContext dataContext )
         throws UserDataException
     {
-        // try
-        // {
-        // if ( autoCommit )
-        // {
-        dataContext.begin();
-        // }
-
-        boolean success = true;
         final Permission perm = getPermission( name );
         if ( perm == null )
         {
@@ -403,74 +320,12 @@ public class DBUserDataBackend
         em.remove( perm );
 
         dataContext.permissionChanged( perm );
-
-        // if ( autoCommit )
-        // {
-        if ( success )
-        {
-            dataContext.commit();
-
-            if ( autoCommit )
-            {
-                dataContext.sendNotifications();
-            }
-        }
-        else
-        {
-            dataContext.rollback();
-        }
-        // }
-        // }
-        // catch ( final IllegalArgumentException e )
-        // {
-        // logger.debug( "Cannot remove permission: %s. Error: %s", e, name, e.getMessage() );
-        // throw new UserDataException( "Cannot delete permission: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( RollbackException e )
-        // {
-        // logger.debug( "Cannot remove permission: %s. Error: %s", e, name, e.getMessage() );
-        // throw new UserDataException( "Cannot delete permission: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( HeuristicMixedException e )
-        // {
-        // logger.debug( "Cannot remove permission: %s. Error: %s", e, name, e.getMessage() );
-        // throw new UserDataException( "Cannot delete permission: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( HeuristicRollbackException e )
-        // {
-        // logger.debug( "Cannot remove permission: %s. Error: %s", e, name, e.getMessage() );
-        // throw new UserDataException( "Cannot delete permission: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( SystemException e )
-        // {
-        // logger.debug( "Cannot remove permission: %s. Error: %s", e, name, e.getMessage() );
-        // throw new UserDataException( "Cannot delete permission: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( NotSupportedException e )
-        // {
-        // logger.debug( "Cannot remove permission: %s. Error: %s", e, name, e.getMessage() );
-        // throw new UserDataException( "Cannot delete permission: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
     }
 
     @Override
-    public void deleteRole( final String name, final boolean autoCommit )
+    public void deleteRole( final String name, final UserDataContext dataContext )
         throws UserDataException
     {
-        // try
-        // {
-        // if ( autoCommit )
-        // {
-        dataContext.begin();
-        // }
-
-        boolean success = true;
         final Role role = getRole( name );
         if ( role == null )
         {
@@ -480,74 +335,12 @@ public class DBUserDataBackend
         em.remove( role );
 
         dataContext.roleChanged( role );
-
-        // if ( autoCommit )
-        // {
-        if ( success )
-        {
-            dataContext.commit();
-
-            if ( autoCommit )
-            {
-                dataContext.sendNotifications();
-            }
-        }
-        else
-        {
-            dataContext.rollback();
-        }
-        // }
-        // }
-        // catch ( final IllegalArgumentException e )
-        // {
-        // logger.debug( "Cannot remove role: %s. Error: %s", e, name, e.getMessage() );
-        // throw new UserDataException( "Cannot delete role: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( RollbackException e )
-        // {
-        // logger.debug( "Cannot remove role: %s. Error: %s", e, name, e.getMessage() );
-        // throw new UserDataException( "Cannot delete role: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( HeuristicMixedException e )
-        // {
-        // logger.debug( "Cannot remove role: %s. Error: %s", e, name, e.getMessage() );
-        // throw new UserDataException( "Cannot delete role: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( HeuristicRollbackException e )
-        // {
-        // logger.debug( "Cannot remove role: %s. Error: %s", e, name, e.getMessage() );
-        // throw new UserDataException( "Cannot delete role: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( SystemException e )
-        // {
-        // logger.debug( "Cannot remove role: %s. Error: %s", e, name, e.getMessage() );
-        // throw new UserDataException( "Cannot delete role: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( NotSupportedException e )
-        // {
-        // logger.debug( "Cannot remove role: %s. Error: %s", e, name, e.getMessage() );
-        // throw new UserDataException( "Cannot delete role: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
     }
 
     @Override
-    public void deleteUser( final String username, final boolean autoCommit )
+    public void deleteUser( final String username, final UserDataContext dataContext )
         throws UserDataException
     {
-        // try
-        // {
-        // if ( autoCommit )
-        // {
-        dataContext.begin();
-        // }
-
-        boolean success = true;
         final User user = getUser( username );
         if ( user == null )
         {
@@ -557,60 +350,6 @@ public class DBUserDataBackend
         em.remove( user );
 
         dataContext.userChanged( user );
-
-        // if ( autoCommit )
-        // {
-        if ( success )
-        {
-            dataContext.commit();
-
-            if ( autoCommit )
-            {
-                dataContext.sendNotifications();
-            }
-        }
-        else
-        {
-            dataContext.rollback();
-        }
-        // }
-        // }
-        // catch ( final IllegalArgumentException e )
-        // {
-        // logger.debug( "Cannot remove user: %s. Error: %s", e, username, e.getMessage() );
-        // throw new UserDataException( "Cannot delete user: %s. Error: %s", e, username,
-        // e.getMessage() );
-        // }
-        // catch ( RollbackException e )
-        // {
-        // logger.debug( "Cannot remove user: %s. Error: %s", e, username, e.getMessage() );
-        // throw new UserDataException( "Cannot delete user: %s. Error: %s", e, username,
-        // e.getMessage() );
-        // }
-        // catch ( HeuristicMixedException e )
-        // {
-        // logger.debug( "Cannot remove user: %s. Error: %s", e, username, e.getMessage() );
-        // throw new UserDataException( "Cannot delete user: %s. Error: %s", e, username,
-        // e.getMessage() );
-        // }
-        // catch ( HeuristicRollbackException e )
-        // {
-        // logger.debug( "Cannot remove user: %s. Error: %s", e, username, e.getMessage() );
-        // throw new UserDataException( "Cannot delete user: %s. Error: %s", e, username,
-        // e.getMessage() );
-        // }
-        // catch ( SystemException e )
-        // {
-        // logger.debug( "Cannot remove user: %s. Error: %s", e, username, e.getMessage() );
-        // throw new UserDataException( "Cannot delete user: %s. Error: %s", e, username,
-        // e.getMessage() );
-        // }
-        // catch ( NotSupportedException e )
-        // {
-        // logger.debug( "Cannot remove user: %s. Error: %s", e, username, e.getMessage() );
-        // throw new UserDataException( "Cannot delete user: %s. Error: %s", e, username,
-        // e.getMessage() );
-        // }
     }
 
     public static final class RepositoryProducer

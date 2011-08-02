@@ -9,13 +9,15 @@ import org.commonjava.web.user.model.User;
 public interface UserDataBackend
 {
 
-    void deleteUser( final String username, final boolean autoCommit )
+    UserDataContext createContext();
+
+    void deleteUser( final String username, final UserDataContext context )
         throws UserDataException;
 
-    void deleteRole( final String name, final boolean autoCommit )
+    void deleteRole( final String name, final UserDataContext context )
         throws UserDataException;
 
-    void deletePermission( final String name, final boolean autoCommit )
+    void deletePermission( final String name, final UserDataContext context )
         throws UserDataException;
 
     Role getRole( final String roleName );
@@ -24,13 +26,13 @@ public interface UserDataBackend
 
     User getUser( final String username );
 
-    Permission savePermission( final Permission perm, final boolean autoCommit )
+    Permission savePermission( final Permission perm, final UserDataContext context )
         throws UserDataException;
 
-    Role saveRole( final Role role, final boolean autoCommit )
+    Role saveRole( final Role role, final UserDataContext context )
         throws UserDataException;
 
-    User saveUser( final User user, final boolean autoCommit )
+    User saveUser( final User user, final UserDataContext context )
         throws UserDataException;
 
     List<Permission> getPermissions();

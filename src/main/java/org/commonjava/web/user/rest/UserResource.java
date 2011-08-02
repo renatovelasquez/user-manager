@@ -81,7 +81,7 @@ public class UserResource
         ResponseBuilder builder;
         try
         {
-            dataManager.createUser( user, true );
+            dataManager.createUser( user, dataManager.createContext(), true );
             builder =
                 Response.created( uriInfo.getAbsolutePathBuilder().build( user.getUsername() ) );
         }
@@ -132,7 +132,7 @@ public class UserResource
 
         try
         {
-            dataManager.updateUser( user, true );
+            dataManager.updateUser( user, dataManager.createContext(), true );
             builder =
                 Response.ok().contentLocation( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
@@ -163,7 +163,7 @@ public class UserResource
         ResponseBuilder builder;
         try
         {
-            dataManager.updateUser( user, true );
+            dataManager.updateUser( user, dataManager.createContext(), true );
             builder =
                 Response.ok().contentLocation( uriInfo.getAbsolutePathBuilder().build( name ) );
         }
@@ -187,7 +187,7 @@ public class UserResource
         ResponseBuilder builder;
         try
         {
-            dataManager.deleteUser( name, true );
+            dataManager.deleteUser( name, dataManager.createContext(), true );
             builder = Response.ok();
         }
         catch ( final UserDataException e )

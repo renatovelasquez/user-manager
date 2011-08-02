@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import javax.enterprise.event.Event;
-import javax.inject.Inject;
+import javax.persistence.EntityManager;
 import javax.transaction.HeuristicMixedException;
 import javax.transaction.HeuristicRollbackException;
 import javax.transaction.NotSupportedException;
@@ -12,6 +12,7 @@ import javax.transaction.RollbackException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 
+import org.commonjava.util.logging.Logger;
 import org.commonjava.web.user.model.Permission;
 import org.commonjava.web.user.model.Role;
 import org.commonjava.web.user.model.User;
@@ -19,16 +20,17 @@ import org.commonjava.web.user.model.User;
 public class UserDataContext
 {
 
-    // private final Logger logger = new Logger( getClass() );
+    private final Logger logger = new Logger( getClass() );
 
-    @Inject
-    private Event<User> userEventSrc;
+    private final Event<User> userEventSrc;
 
-    @Inject
-    private Event<Role> roleEventSrc;
+    private final Event<Role> roleEventSrc;
 
-    @Inject
-    private Event<Permission> permissionEventSrc;
+    private final Event<Permission> permissionEventSrc;
+
+    private final UserTransaction tx;
+
+    private final EntityManager em;
 
     private final Set<User> changedUsers = new HashSet<User>();
 
@@ -36,12 +38,20 @@ public class UserDataContext
 
     private final Set<Permission> changedPermissions = new HashSet<Permission>();
 
-    @Inject
-    private UserTransaction tx;
-
     private boolean inTx = false;
 
     private boolean outTx = false;
+
+    UserDataContext( final Event<User> userEventSrc, final Event<Role> roleEventSrc,
+                     final Event<Permission> permissionEventSrc, final UserTransaction tx,
+                     final EntityManager em )
+    {
+        this.userEventSrc = userEventSrc;
+        this.roleEventSrc = roleEventSrc;
+        this.permissionEventSrc = permissionEventSrc;
+        this.tx = tx;
+        this.em = em;
+    }
 
     public synchronized UserDataContext begin()
         throws UserDataException
@@ -56,6 +66,7 @@ public class UserDataContext
             try
             {
                 tx.begin();
+                em.joinTransaction();
             }
             catch ( NotSupportedException e )
             {
@@ -115,8 +126,7 @@ public class UserDataContext
     {
         if ( !inTx )
         {
-            throw new UserDataException(
-                                         "Transaction cannot be rolled back if it has not been started! Call begin() first!" );
+            logger.warn( "Transaction cannot be rolled back if it has not been started! Call begin() first! Skipping..." );
         }
 
         if ( !outTx )
@@ -130,8 +140,10 @@ public class UserDataContext
                 throw new UserDataException( "Failed to rollback transaction: %s", e,
                                              e.getMessage() );
             }
-
-            outTx = true;
+            finally
+            {
+                outTx = true;
+            }
         }
 
         return this;
@@ -159,16 +171,19 @@ public class UserDataContext
     {
         if ( !changedUsers.isEmpty() )
         {
+            logger.info( "\n\n\n\nSending user change notifications..." );
             userEventSrc.fire( changedUsers.iterator().next() );
         }
 
         if ( !changedRoles.isEmpty() )
         {
+            logger.info( "\n\n\n\nSending role change notifications..." );
             roleEventSrc.fire( changedRoles.iterator().next() );
         }
 
         if ( !changedPermissions.isEmpty() )
         {
+            logger.info( "\n\n\n\nSending permission change notifications..." );
             permissionEventSrc.fire( changedPermissions.iterator().next() );
         }
 

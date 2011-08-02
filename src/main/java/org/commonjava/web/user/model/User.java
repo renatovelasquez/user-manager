@@ -198,12 +198,13 @@ public class User
                                              user.realm );
     }
 
-    public User updateFrom( final User user )
+    public User updateFrom( final User user, final Set<Role> roles )
     {
         this.email = user.getEmail();
         this.firstName = user.getFirstName();
         this.lastName = user.getLastName();
         this.passwordDigest = user.getPasswordDigest();
+        this.roles = roles;
 
         return this;
     }

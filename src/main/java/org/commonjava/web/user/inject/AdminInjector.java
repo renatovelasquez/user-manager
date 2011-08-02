@@ -1,15 +1,17 @@
 package org.commonjava.web.user.inject;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+import javax.servlet.annotation.WebListener;
 
 import org.commonjava.util.logging.Logger;
 import org.commonjava.web.user.data.UserDataException;
 import org.commonjava.web.user.data.UserDataInitializer;
 
-//@WebListener
-//@Singleton
+@WebListener
+@Singleton
 public class AdminInjector
     implements ServletContextListener
 {
@@ -31,6 +33,7 @@ public class AdminInjector
 
         try
         {
+            logger.info( "\n\n\n\nCreating admin user/role/perm information" );
             initializer.initializeAdmin();
         }
         catch ( final UserDataException e )

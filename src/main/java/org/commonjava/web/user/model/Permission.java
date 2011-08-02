@@ -102,6 +102,11 @@ public class Permission
     @Override
     public boolean implies( final org.apache.shiro.authz.Permission p )
     {
+        if ( name.equals( WILDCARD ) )
+        {
+            return true;
+        }
+
         if ( name.endsWith( WILDCARD ) && ( p instanceof Permission ) )
         {
             Permission perm = (Permission) p;

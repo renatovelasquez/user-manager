@@ -31,9 +31,6 @@ public class UserDataInitializer
     private final Logger logger = new Logger( getClass() );
 
     @Inject
-    private UserDataContext ctx;
-
-    @Inject
     private UserDataManager dataManager;
 
     @Inject
@@ -45,67 +42,48 @@ public class UserDataInitializer
     public void initializeAdmin()
         throws UserDataException
     {
-        // try
-        // {
-        ctx.begin();
-
-        Permission perm = dataManager.getPermission( Permission.WILDCARD );
-        if ( perm == null )
+        UserDataContext ctx = dataManager.createContext();
+        try
         {
-            perm = new Permission( Permission.WILDCARD );
-            logger.info( "Creating wildcard permission: %s", perm );
+            ctx.begin();
 
-            dataManager.createPermission( perm, false );
+            Permission perm = dataManager.getPermission( Permission.WILDCARD );
+            if ( perm == null )
+            {
+                perm = new Permission( Permission.WILDCARD );
+                logger.info( "Creating wildcard permission: %s", perm );
+
+                dataManager.createPermission( perm, ctx, false );
+            }
+
+            Role role = dataManager.getRole( Role.ADMIN );
+            if ( role == null )
+            {
+                role = new Role( Role.ADMIN, perm );
+                role.addPermission( perm );
+                logger.info( "Creating admin role: %s", role );
+
+                dataManager.createRole( role, ctx, false );
+            }
+
+            User user = dataManager.getUser( User.ADMIN );
+            if ( user == null )
+            {
+                user = userManagerConfig.createInitialAdminUser( passwordManager );
+                user.addRole( role );
+                logger.info( "Creating admin user: %s", user );
+
+                dataManager.createUser( user, ctx, false );
+            }
+
+            ctx.commit();
+            ctx.sendNotifications();
         }
-
-        Role role = dataManager.getRole( Role.ADMIN );
-        if ( role == null )
+        catch ( UserDataException e )
         {
-            role = new Role( Role.ADMIN, perm );
-            role.addPermission( perm );
-            logger.info( "Creating admin role: %s", role );
-
-            dataManager.createRole( role, false );
+            ctx.rollback();
+            throw e;
         }
-
-        User user = dataManager.getUser( User.ADMIN );
-        if ( user == null )
-        {
-            user = userManagerConfig.createInitialAdminUser( passwordManager );
-            user.addRole( role );
-            logger.info( "Creating admin user: %s", user );
-
-            dataManager.createUser( user, false );
-        }
-
-        ctx.commit();
-        ctx.sendNotifications();
-        // }
-        // catch ( NotSupportedException e )
-        // {
-        // throw new UserDataException( "Failed to initialize admin user/role/permissions: %s", e,
-        // e.getMessage() );
-        // }
-        // catch ( SystemException e )
-        // {
-        // throw new UserDataException( "Failed to initialize admin user/role/permissions: %s", e,
-        // e.getMessage() );
-        // }
-        // catch ( RollbackException e )
-        // {
-        // throw new UserDataException( "Failed to initialize admin user/role/permissions: %s", e,
-        // e.getMessage() );
-        // }
-        // catch ( HeuristicMixedException e )
-        // {
-        // throw new UserDataException( "Failed to initialize admin user/role/permissions: %s", e,
-        // e.getMessage() );
-        // }
-        // catch ( HeuristicRollbackException e )
-        // {
-        // throw new UserDataException( "Failed to initialize admin user/role/permissions: %s", e,
-        // e.getMessage() );
-        // }
     }
 
 }

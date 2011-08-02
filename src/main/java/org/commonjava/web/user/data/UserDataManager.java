@@ -58,10 +58,13 @@ public class UserDataManager
     @Inject
     private PasswordManager passwordManager;
 
-    @Inject
-    private UserDataContext context;
+    public UserDataContext createContext()
+    {
+        return backend.createContext();
+    }
 
-    public Permission createPermission( final String name, final boolean autoCommit )
+    public Permission createPermission( final String name, final UserDataContext dataContext,
+                                        final boolean autoCommit )
         throws UserDataException
     {
         if ( backend.hasPermission( name ) )
@@ -69,10 +72,32 @@ public class UserDataManager
             throw new UserDataException( "Permission already exists: %s", name );
         }
 
-        return backend.savePermission( new Permission( name ), autoCommit );
+        try
+        {
+            if ( autoCommit )
+            {
+                dataContext.begin();
+            }
+
+            Permission p = backend.savePermission( new Permission( name ), dataContext );
+
+            if ( autoCommit )
+            {
+                dataContext.commit();
+                dataContext.sendNotifications();
+            }
+
+            return p;
+        }
+        catch ( UserDataException e )
+        {
+            dataContext.rollback();
+            throw e;
+        }
     }
 
-    public Permission createPermission( final Permission perm, final boolean autoCommit )
+    public Permission createPermission( final Permission perm, final UserDataContext dataContext,
+                                        final boolean autoCommit )
         throws UserDataException
     {
         if ( backend.hasPermission( perm.getName() ) )
@@ -80,10 +105,32 @@ public class UserDataManager
             throw new UserDataException( "Permission already exists: %s", perm.getName() );
         }
 
-        return backend.savePermission( perm, autoCommit );
+        try
+        {
+            if ( autoCommit )
+            {
+                dataContext.begin();
+            }
+
+            Permission p = backend.savePermission( perm, dataContext );
+
+            if ( autoCommit )
+            {
+                dataContext.commit();
+                dataContext.sendNotifications();
+            }
+
+            return p;
+        }
+        catch ( UserDataException e )
+        {
+            dataContext.rollback();
+            throw e;
+        }
     }
 
-    public Role createRole( final String name, final boolean autoCommit )
+    public Role createRole( final String name, final UserDataContext dataContext,
+                            final boolean autoCommit )
         throws UserDataException
     {
         if ( backend.hasRole( name ) )
@@ -91,10 +138,32 @@ public class UserDataManager
             throw new UserDataException( "Role already exists: %s", name );
         }
 
-        return backend.saveRole( new Role( name ), autoCommit );
+        try
+        {
+            if ( autoCommit )
+            {
+                dataContext.begin();
+            }
+
+            Role r = backend.saveRole( new Role( name ), dataContext );
+
+            if ( autoCommit )
+            {
+                dataContext.commit();
+                dataContext.sendNotifications();
+            }
+
+            return r;
+        }
+        catch ( UserDataException e )
+        {
+            dataContext.rollback();
+            throw e;
+        }
     }
 
-    public Role createRole( final Role role, final boolean autoCommit )
+    public Role createRole( final Role role, final UserDataContext dataContext,
+                            final boolean autoCommit )
         throws UserDataException
     {
         if ( backend.hasRole( role.getName() ) )
@@ -102,10 +171,32 @@ public class UserDataManager
             throw new UserDataException( "Role already exists: %s", role.getName() );
         }
 
-        return backend.saveRole( role, autoCommit );
+        try
+        {
+            if ( autoCommit )
+            {
+                dataContext.begin();
+            }
+
+            Role r = backend.saveRole( role, dataContext );
+
+            if ( autoCommit )
+            {
+                dataContext.commit();
+                dataContext.sendNotifications();
+            }
+
+            return r;
+        }
+        catch ( UserDataException e )
+        {
+            dataContext.rollback();
+            throw e;
+        }
     }
 
-    public Role updateRole( final Role role, final boolean autoCommit )
+    public Role updateRole( final Role role, final UserDataContext dataContext,
+                            final boolean autoCommit )
         throws UserDataException
     {
         if ( !backend.hasRole( role.getName() ) )
@@ -113,16 +204,32 @@ public class UserDataManager
             throw new UserDataException( "Role doesn't exist: %s", role.getName() );
         }
 
-        Role existing = backend.getRole( role.getName() );
-        if ( role != existing )
+        try
         {
-            existing = existing.updateFrom( role );
-        }
+            if ( autoCommit )
+            {
+                dataContext.begin();
+            }
 
-        return backend.saveRole( existing, autoCommit );
+            Role r = backend.saveRole( role, dataContext );
+
+            if ( autoCommit )
+            {
+                dataContext.commit();
+                dataContext.sendNotifications();
+            }
+
+            return r;
+        }
+        catch ( UserDataException e )
+        {
+            dataContext.rollback();
+            throw e;
+        }
     }
 
-    public User createUser( final User user, final boolean autoCommit )
+    public User createUser( final User user, final UserDataContext dataContext,
+                            final boolean autoCommit )
         throws UserDataException
     {
         if ( backend.hasUser( user.getUsername() ) )
@@ -144,10 +251,32 @@ public class UserDataManager
             user.setPasswordDigest( passwordManager.digestPassword( password ) );
         }
 
-        return backend.saveUser( user, autoCommit );
+        try
+        {
+            if ( autoCommit )
+            {
+                dataContext.begin();
+            }
+
+            User u = backend.saveUser( user, dataContext );
+
+            if ( autoCommit )
+            {
+                dataContext.commit();
+                dataContext.sendNotifications();
+            }
+
+            return u;
+        }
+        catch ( UserDataException e )
+        {
+            dataContext.rollback();
+            throw e;
+        }
     }
 
-    public User updateUser( final User user, final boolean autoCommit )
+    public User updateUser( final User user, final UserDataContext dataContext,
+                            final boolean autoCommit )
         throws UserDataException
     {
         if ( !backend.hasUser( user.getUsername() ) )
@@ -155,13 +284,28 @@ public class UserDataManager
             throw new UserDataException( "User doesn't exist: %s", user.getUsername() );
         }
 
-        User existing = getUser( user.getUsername() );
-        if ( user != existing )
+        try
         {
-            existing = existing.updateFrom( user );
-        }
+            if ( autoCommit )
+            {
+                dataContext.begin();
+            }
 
-        return backend.saveUser( existing, autoCommit );
+            User u = backend.saveUser( user, dataContext );
+
+            if ( autoCommit )
+            {
+                dataContext.commit();
+                dataContext.sendNotifications();
+            }
+
+            return u;
+        }
+        catch ( UserDataException e )
+        {
+            dataContext.rollback();
+            throw e;
+        }
     }
 
     @Produces
@@ -202,181 +346,145 @@ public class UserDataManager
 
     public Map<String, Permission> createCRUDPermissions( final String namespace,
                                                           final String name,
+                                                          final UserDataContext context,
                                                           final boolean autoCommit )
         throws UserDataException
     {
-        // try
-        // {
-        if ( autoCommit )
+        try
         {
-            context.begin();
+            if ( autoCommit )
+            {
+                context.begin();
+            }
+
+            final Map<String, Permission> perms = new HashMap<String, Permission>();
+            perms.put( CREATE, new Permission( namespace, name, CREATE ) );
+            perms.put( READ, new Permission( namespace, name, READ ) );
+            perms.put( UPDATE, new Permission( namespace, name, UPDATE ) );
+            perms.put( DELETE, new Permission( namespace, name, DELETE ) );
+
+            for ( final Permission perm : perms.values() )
+            {
+                backend.savePermission( perm, context );
+            }
+
+            if ( autoCommit )
+            {
+                context.commit();
+                context.sendNotifications();
+            }
+
+            return perms;
         }
-
-        final Map<String, Permission> perms = new HashMap<String, Permission>();
-        perms.put( CREATE, new Permission( namespace, name, CREATE ) );
-        perms.put( READ, new Permission( namespace, name, READ ) );
-        perms.put( UPDATE, new Permission( namespace, name, UPDATE ) );
-        perms.put( DELETE, new Permission( namespace, name, DELETE ) );
-
-        for ( final Permission perm : perms.values() )
+        catch ( UserDataException e )
         {
-            backend.savePermission( perm, false );
+            context.rollback();
+            throw e;
         }
-
-        if ( autoCommit )
-        {
-            context.commit();
-            context.sendNotifications();
-        }
-
-        return perms;
-        // }
-        // catch ( final NotSupportedException e )
-        // {
-        // throw new UserDataException( "Cannot create CRUD permissions for: %s:%s. Error: %s", e,
-        // namespace, name, e.getMessage() );
-        // }
-        // catch ( final SystemException e )
-        // {
-        // throw new UserDataException( "Cannot create CRUD permissions for: %s:%s. Error: %s", e,
-        // namespace, name, e.getMessage() );
-        // }
-        // catch ( final RollbackException e )
-        // {
-        // throw new UserDataException( "Cannot create CRUD permissions for: %s:%s. Error: %s", e,
-        // namespace, name, e.getMessage() );
-        // }
-        // catch ( final HeuristicMixedException e )
-        // {
-        // throw new UserDataException( "Cannot create CRUD permissions for: %s:%s. Error: %s", e,
-        // namespace, name, e.getMessage() );
-        // }
-        // catch ( final HeuristicRollbackException e )
-        // {
-        // throw new UserDataException( "Cannot create CRUD permissions for: %s:%s. Error: %s", e,
-        // namespace, name, e.getMessage() );
-        // }
     }
 
-    public void deletePermission( final String name, final boolean autoCommit )
+    public void deletePermission( final String name, final UserDataContext context,
+                                  final boolean autoCommit )
         throws UserDataException
     {
-        // try
-        // {
-        if ( autoCommit )
+        try
         {
-            context.begin();
-        }
-
-        Permission perm = new Permission( name );
-        for ( Role role : roles )
-        {
-            logger.info( "\n\n\n\nChecking Role: %s\n\nfor permission: '%s'\n\n\n\n", role, perm );
-
-            if ( role.removePermission( perm ) )
+            if ( autoCommit )
             {
-                logger.info( "\n\n\n\nUpdating Role: %s to remove permission: %s\n\n\n\n", role,
+                context.begin();
+            }
+
+            Permission perm = new Permission( name );
+            for ( Role role : roles )
+            {
+                logger.info( "\n\n\n\nChecking Role: %s\n\nfor permission: '%s'\n\n\n\n", role,
                              perm );
-                backend.saveRole( role, false );
+
+                if ( role.removePermission( perm ) )
+                {
+                    logger.info( "\n\n\n\nUpdating Role: %s to remove permission: %s\n\n\n\n",
+                                 role, perm );
+                    backend.saveRole( role, context );
+                }
+
+                logger.info( "\n\n\n\nAfter removal attempt, Role is: %s\n\n\n\n", role );
             }
 
-            logger.info( "\n\n\n\nAfter removal attempt, Role is: %s\n\n\n\n", role );
-        }
+            logger.info( "\n\n\n\nRemoving permission: %s\n\n\n\n", perm );
+            backend.deletePermission( name, context );
 
-        logger.info( "\n\n\n\nRemoving permission: %s\n\n\n\n", perm );
-        backend.deletePermission( name, false );
-
-        if ( autoCommit )
-        {
-            context.commit();
-            context.sendNotifications();
-        }
-        // }
-        // catch ( final NotSupportedException e )
-        // {
-        // throw new UserDataException( "Cannot remove role: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( final SystemException e )
-        // {
-        // throw new UserDataException( "Cannot remove role: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( final RollbackException e )
-        // {
-        // throw new UserDataException( "Cannot remove role: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( final HeuristicMixedException e )
-        // {
-        // throw new UserDataException( "Cannot remove role: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( final HeuristicRollbackException e )
-        // {
-        // throw new UserDataException( "Cannot remove role: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-    }
-
-    public void deleteRole( final String name, final boolean autoCommit )
-        throws UserDataException
-    {
-        // try
-        // {
-        if ( autoCommit )
-        {
-            context.begin();
-        }
-
-        for ( User user : users )
-        {
-            Role role = new Role( name );
-            if ( user.removeRole( role ) )
+            if ( autoCommit )
             {
-                backend.saveUser( user, false );
+                context.commit();
+                context.sendNotifications();
             }
         }
-
-        backend.deleteRole( name, false );
-
-        if ( autoCommit )
+        catch ( UserDataException e )
         {
-            context.commit();
-            context.sendNotifications();
+            context.rollback();
+            throw e;
         }
-        // }
-        // catch ( final NotSupportedException e )
-        // {
-        // throw new UserDataException( "Cannot remove user: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( final SystemException e )
-        // {
-        // throw new UserDataException( "Cannot remove user: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( final RollbackException e )
-        // {
-        // throw new UserDataException( "Cannot remove user: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( final HeuristicMixedException e )
-        // {
-        // throw new UserDataException( "Cannot remove user: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
-        // catch ( final HeuristicRollbackException e )
-        // {
-        // throw new UserDataException( "Cannot remove user: %s. Error: %s", e, name,
-        // e.getMessage() );
-        // }
     }
 
-    public void deleteUser( final String username, final boolean autoCommit )
+    public void deleteRole( final String name, final UserDataContext context,
+                            final boolean autoCommit )
         throws UserDataException
     {
-        backend.deleteUser( username, autoCommit );
+        try
+        {
+            if ( autoCommit )
+            {
+                context.begin();
+            }
+
+            for ( User user : users )
+            {
+                Role role = new Role( name );
+                if ( user.removeRole( role ) )
+                {
+                    backend.saveUser( user, context );
+                }
+            }
+
+            backend.deleteRole( name, context );
+
+            if ( autoCommit )
+            {
+                context.commit();
+                context.sendNotifications();
+            }
+        }
+        catch ( UserDataException e )
+        {
+            context.rollback();
+            throw e;
+        }
+    }
+
+    public void deleteUser( final String username, final UserDataContext dataContext,
+                            final boolean autoCommit )
+        throws UserDataException
+    {
+        try
+        {
+            if ( autoCommit )
+            {
+                dataContext.begin();
+            }
+
+            backend.deleteUser( username, dataContext );
+
+            if ( autoCommit )
+            {
+                dataContext.commit();
+                dataContext.sendNotifications();
+            }
+        }
+        catch ( UserDataException e )
+        {
+            dataContext.rollback();
+            throw e;
+        }
     }
 
     public synchronized void onUserChanged( @Observes( notifyObserver = Reception.IF_EXISTS ) final User user )
@@ -400,6 +508,7 @@ public class UserDataManager
     @PostConstruct
     public synchronized void loadData()
     {
+        logger.info( "\n\n\n\n(Re)Loading user/role/permission data." );
         if ( users == null )
         {
             users = backend.getUsers();
